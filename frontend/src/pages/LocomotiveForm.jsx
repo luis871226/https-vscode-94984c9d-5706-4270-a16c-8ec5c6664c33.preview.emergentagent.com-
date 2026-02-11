@@ -277,17 +277,6 @@ const LocomotiveForm = () => {
             </div>
           </div>
         </fieldset>
-                name="reference"
-                value={formData.reference}
-                onChange={handleChange}
-                required
-                className="railway-input w-full"
-                placeholder="Ej: HN2493"
-                data-testid="input-reference"
-              />
-            </div>
-          </div>
-        </fieldset>
 
         {/* Technical Info */}
         <fieldset className="form-fieldset">
