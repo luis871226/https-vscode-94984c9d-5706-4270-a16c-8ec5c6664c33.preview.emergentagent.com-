@@ -29,6 +29,11 @@ const LocomotiveForm = () => {
     model: "",
     reference: "",
     locomotive_type: "electrica",
+    // Prototipo
+    paint_scheme: "",
+    registration_number: "",
+    prototype_type: "",
+    // DCC
     dcc_address: 3,
     decoder_brand: "",
     decoder_model: "",
