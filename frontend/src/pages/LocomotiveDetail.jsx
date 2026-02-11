@@ -179,6 +179,40 @@ const LocomotiveDetail = () => {
 
         {/* Details Section */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Prototipo Info */}
+          {(locomotive.paint_scheme || locomotive.registration_number || locomotive.prototype_type) && (
+            <div className="bg-white border border-slate-200">
+              <div className="p-6 border-b border-slate-200">
+                <h2 className="font-heading text-lg font-semibold uppercase tracking-tight text-slate-800 flex items-center gap-2">
+                  <Train className="w-5 h-5 text-red-600" />
+                  Prototipo
+                </h2>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                  {locomotive.paint_scheme && (
+                    <div>
+                      <p className="font-mono text-xs uppercase text-slate-500 mb-1">Esquema de Pintura</p>
+                      <p className="font-mono text-sm text-slate-900">{locomotive.paint_scheme}</p>
+                    </div>
+                  )}
+                  {locomotive.registration_number && (
+                    <div>
+                      <p className="font-mono text-xs uppercase text-slate-500 mb-1">Matrícula / Número</p>
+                      <p className="font-mono text-sm font-bold text-slate-900">{locomotive.registration_number}</p>
+                    </div>
+                  )}
+                  {locomotive.prototype_type && (
+                    <div>
+                      <p className="font-mono text-xs uppercase text-slate-500 mb-1">Tipo Prototipo</p>
+                      <p className="font-mono text-sm text-slate-900">{locomotive.prototype_type}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Technical Info */}
           <div className="bg-white border border-slate-200">
             <div className="p-6 border-b border-slate-200">
