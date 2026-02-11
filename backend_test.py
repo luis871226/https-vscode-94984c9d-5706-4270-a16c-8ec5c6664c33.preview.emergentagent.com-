@@ -314,6 +314,104 @@ class RailwayAPITester:
         
         return all_success
 
+    def test_backup_restore_endpoints(self):
+        """Test backup and restore functionality"""
+        print("\n" + "=" * 60)
+        print("TESTING BACKUP/RESTORE ENDPOINTS")
+        print("=" * 60)
+        
+        # First, create some test data to backup
+        test_locomotive = {
+            "brand": "Electrotren",
+            "model": "252",
+            "reference": "E252-TEST",
+            "locomotive_type": "electrica",
+            "paint_scheme": "Azul/Amarillo RENFE",
+            "registration_number": "252-001-2",
+            "prototype_type": "Locomotora Universal",
+            "dcc_address": 2520,
+            "condition": "nuevo",
+            "price": 150.00,
+            "notes": "Test locomotive for backup/restore"
+        }
+        
+        # Create test locomotive
+        success, loco_response = self.run_test("Create Test Locomotive for Backup", "POST", "locomotives", 200, test_locomotive)
+        if not success:
+            return False
+        
+        locomotive_id = loco_response.get('id')
+        print(f"   Created test locomotive ID: {locomotive_id}")
+        
+        # Test GET backup endpoint
+        success, backup_data = self.run_test("Create Backup", "GET", "backup", 200)
+        if not success:
+            print("❌ Backup endpoint failed")
+            return False
+        
+        # Verify backup structure
+        required_backup_fields = ['version', 'created_at', 'locomotives', 'rolling_stock', 'decoders', 'sound_projects']
+        backup_valid = True
+        
+        for field in required_backup_fields:
+            if field not in backup_data:
+                print(f"   ❌ Missing required backup field: {field}")
+                backup_valid = False
+            else:
+                print(f"   ✅ Backup field '{field}': {type(backup_data[field]).__name__}")
+        
+        if not backup_valid:
+            return False
+        
+        # Verify our test locomotive is in the backup
+        test_loco_in_backup = any(loco.get('id') == locomotive_id for loco in backup_data['locomotives'])
+        if test_loco_in_backup:
+            print(f"   ✅ Test locomotive found in backup")
+        else:
+            print(f"   ❌ Test locomotive not found in backup")
+            return False
+        
+        # Test backup data counts
+        print(f"   Backup contains:")
+        print(f"     - {len(backup_data['locomotives'])} locomotives")
+        print(f"     - {len(backup_data['rolling_stock'])} rolling stock items")
+        print(f"     - {len(backup_data['decoders'])} decoders")
+        print(f"     - {len(backup_data['sound_projects'])} sound projects")
+        
+        # Test restore endpoint with the backup data
+        success, restore_response = self.run_test("Restore Backup", "POST", "restore", 200, backup_data)
+        if not success:
+            print("❌ Restore endpoint failed")
+            return False
+        
+        # Verify restore response structure
+        if 'restored' in restore_response:
+            restored_counts = restore_response['restored']
+            print(f"   ✅ Restore completed:")
+            print(f"     - {restored_counts.get('locomotives', 0)} locomotives restored")
+            print(f"     - {restored_counts.get('rolling_stock', 0)} rolling stock restored")
+            print(f"     - {restored_counts.get('decoders', 0)} decoders restored")
+            print(f"     - {restored_counts.get('sound_projects', 0)} sound projects restored")
+        else:
+            print("   ⚠️  Restore response missing 'restored' field")
+        
+        # Verify data still exists after restore
+        success, post_restore_locomotive = self.run_test("Verify Locomotive After Restore", "GET", f"locomotives/{locomotive_id}")
+        if success:
+            print("   ✅ Locomotive still exists after restore")
+            
+            # Check prototipo fields are preserved
+            prototipo_fields = ['paint_scheme', 'registration_number', 'prototype_type']
+            for field in prototipo_fields:
+                value = post_restore_locomotive.get(field)
+                if value:
+                    print(f"     {field}: {value}")
+                    
+        # Clean up test locomotive
+        self.run_test("Delete Test Locomotive", "DELETE", f"locomotives/{locomotive_id}", 200)
+        
+        return True
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚂 STARTING RAILWAY COLLECTION API TESTS")
