@@ -555,6 +555,7 @@ class RailwayAPITester:
             ("Locomotive CRUD with Types and Prototipo", self.test_locomotive_crud_with_types_and_prototipo),
             ("Rolling Stock CRUD", self.test_rolling_stock_crud),
             ("Backup/Restore Endpoints", self.test_backup_restore_endpoints),
+            ("Backup History and Settings", self.test_backup_history_and_settings),
             ("Error Handling", self.test_error_handling)
         ]
         
