@@ -420,8 +420,9 @@ class RailwayAPITester:
         test_suites = [
             ("Basic Connectivity", self.test_basic_connectivity),
             ("Statistics Endpoint", self.test_stats_endpoint),
-            ("Locomotive CRUD with Types", self.test_locomotive_crud_with_types),
+            ("Locomotive CRUD with Types and Prototipo", self.test_locomotive_crud_with_types_and_prototipo),
             ("Rolling Stock CRUD", self.test_rolling_stock_crud),
+            ("Backup/Restore Endpoints", self.test_backup_restore_endpoints),
             ("Error Handling", self.test_error_handling)
         ]
         
