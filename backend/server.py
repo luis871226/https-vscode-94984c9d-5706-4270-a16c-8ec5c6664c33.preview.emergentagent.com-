@@ -437,13 +437,40 @@ class BackupData(BaseModel):
     decoders: List[dict]
     sound_projects: List[dict]
 
+class BackupHistoryEntry(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    type: str = "manual"  # manual, restore
+    locomotives_count: int = 0
+    rolling_stock_count: int = 0
+    decoders_count: int = 0
+    sound_projects_count: int = 0
+
+class BackupSettings(BaseModel):
+    reminder_enabled: bool = False
+    reminder_frequency: str = "weekly"  # daily, weekly, monthly
+    last_reminder_shown: Optional[str] = None
+
 @api_router.get("/backup")
 async def create_backup():
-    """Export all data as a backup"""
+    """Export all data as a backup and record in history"""
     locomotives = await db.locomotives.find({}, {"_id": 0}).to_list(10000)
     rolling_stock = await db.rolling_stock.find({}, {"_id": 0}).to_list(10000)
     decoders = await db.decoders.find({}, {"_id": 0}).to_list(10000)
     sound_projects = await db.sound_projects.find({}, {"_id": 0}).to_list(10000)
+    
+    # Record backup in history
+    history_entry = BackupHistoryEntry(
+        type="manual",
+        locomotives_count=len(locomotives),
+        rolling_stock_count=len(rolling_stock),
+        decoders_count=len(decoders),
+        sound_projects_count=len(sound_projects)
+    )
+    history_doc = history_entry.model_dump()
+    history_doc['created_at'] = history_doc['created_at'].isoformat()
+    await db.backup_history.insert_one(history_doc)
     
     backup = {
         "version": "1.0",
@@ -455,6 +482,37 @@ async def create_backup():
     }
     
     return backup
+
+@api_router.get("/backup/history")
+async def get_backup_history():
+    """Get backup history"""
+    history = await db.backup_history.find({}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    for entry in history:
+        if isinstance(entry.get('created_at'), str):
+            entry['created_at'] = datetime.fromisoformat(entry['created_at'])
+    return history
+
+@api_router.delete("/backup/history")
+async def clear_backup_history():
+    """Clear backup history"""
+    await db.backup_history.delete_many({})
+    return {"message": "Historial de backups eliminado"}
+
+@api_router.get("/backup/settings")
+async def get_backup_settings():
+    """Get backup reminder settings"""
+    settings = await db.backup_settings.find_one({}, {"_id": 0})
+    if not settings:
+        return BackupSettings().model_dump()
+    return settings
+
+@api_router.post("/backup/settings")
+async def save_backup_settings(settings: BackupSettings):
+    """Save backup reminder settings"""
+    settings_dict = settings.model_dump()
+    await db.backup_settings.delete_many({})
+    await db.backup_settings.insert_one(settings_dict)
+    return settings_dict
 
 @api_router.post("/restore")
 async def restore_backup(backup: BackupData):
