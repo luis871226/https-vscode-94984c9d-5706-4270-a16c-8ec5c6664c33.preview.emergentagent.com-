@@ -511,7 +511,8 @@ async def save_backup_settings(settings: BackupSettings):
     """Save backup reminder settings"""
     settings_dict = settings.model_dump()
     await db.backup_settings.delete_many({})
-    await db.backup_settings.insert_one(settings_dict)
+    result = await db.backup_settings.insert_one(settings_dict)
+    # Return the settings dict without MongoDB's _id
     return settings_dict
 
 @api_router.post("/restore")
