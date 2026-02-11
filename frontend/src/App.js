@@ -12,6 +12,7 @@ import Decoders from "./pages/Decoders";
 import DecoderForm from "./pages/DecoderForm";
 import SoundProjects from "./pages/SoundProjects";
 import SoundProjectForm from "./pages/SoundProjectForm";
+import BackupRestore from "./pages/BackupRestore";
 import "@/App.css";
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
             <Route path="sound-projects" element={<SoundProjects />} />
             <Route path="sound-projects/new" element={<SoundProjectForm />} />
             <Route path="sound-projects/:id/edit" element={<SoundProjectForm />} />
+            <Route path="backup" element={<BackupRestore />} />
           </Route>
         </Routes>
       </BrowserRouter>

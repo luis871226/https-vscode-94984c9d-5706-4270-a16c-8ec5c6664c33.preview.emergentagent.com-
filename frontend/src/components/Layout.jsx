@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom";
-import { Train, LayoutDashboard, Cpu, Volume2, TrainTrack } from "lucide-react";
+import { Train, LayoutDashboard, Cpu, Volume2, TrainTrack, Database } from "lucide-react";
 
 const Layout = () => {
   const location = useLocation();
@@ -10,6 +10,7 @@ const Layout = () => {
     { to: "/rolling-stock", icon: TrainTrack, label: "Vagones" },
     { to: "/decoders", icon: Cpu, label: "Decodificadores" },
     { to: "/sound-projects", icon: Volume2, label: "Sonido" },
+    { to: "/backup", icon: Database, label: "Backup" },
   ];
 
   return (
