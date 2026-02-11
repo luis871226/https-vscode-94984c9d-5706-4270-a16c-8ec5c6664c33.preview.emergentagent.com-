@@ -220,7 +220,7 @@ const LocomotiveForm = () => {
         {/* Basic Info */}
         <fieldset className="form-fieldset">
           <legend className="form-legend">Información Básica</legend>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
               <label className="railway-label">Marca *</label>
               <Input
@@ -248,6 +248,35 @@ const LocomotiveForm = () => {
             <div>
               <label className="railway-label">Referencia *</label>
               <Input
+                name="reference"
+                value={formData.reference}
+                onChange={handleChange}
+                required
+                className="railway-input w-full"
+                placeholder="Ej: HN2493"
+                data-testid="input-reference"
+              />
+            </div>
+            <div>
+              <label className="railway-label">Tipo de Locomotora</label>
+              <Select
+                value={formData.locomotive_type || "electrica"}
+                onValueChange={(value) => handleSelectChange("locomotive_type", value)}
+              >
+                <SelectTrigger className="railway-input" data-testid="select-locomotive-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {locomotiveTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </fieldset>
                 name="reference"
                 value={formData.reference}
                 onChange={handleChange}
