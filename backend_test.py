@@ -1,348 +1,348 @@
 #!/usr/bin/env python3
+
 import requests
 import sys
-import json
 from datetime import datetime
+import json
 
-class RailwayCollectionAPITester:
-    def __init__(self, base_url="https://rail-collection.preview.emergentagent.com/api"):
+class RailwayAPITester:
+    def __init__(self, base_url="https://rail-collection.preview.emergentagent.com"):
         self.base_url = base_url
+        self.api_url = f"{base_url}/api"
         self.tests_run = 0
         self.tests_passed = 0
         self.test_results = []
 
-    def log_test(self, test_name, success, details=None):
-        """Log test result"""
-        self.tests_run += 1
-        if success:
-            self.tests_passed += 1
-            print(f"✅ {test_name}")
-        else:
-            print(f"❌ {test_name} - {details}")
-        
-        self.test_results.append({
-            "test": test_name,
-            "success": success,
-            "details": details
-        })
+    def run_test(self, name, method, endpoint, expected_status=200, data=None, headers=None):
+        """Run a single API test"""
+        url = f"{self.api_url}/{endpoint}"
+        test_headers = {'Content-Type': 'application/json'}
+        if headers:
+            test_headers.update(headers)
 
-    def test_root_endpoint(self):
-        """Test API root endpoint"""
+        self.tests_run += 1
+        print(f"\n🔍 Testing {name}...")
+        
         try:
-            response = requests.get(f"{self.base_url}/")
-            success = response.status_code == 200
-            self.log_test("Root endpoint", success, 
-                         f"Status: {response.status_code}" if not success else None)
-            return success
+            if method == 'GET':
+                response = requests.get(url, headers=test_headers)
+            elif method == 'POST':
+                response = requests.post(url, json=data, headers=test_headers)
+            elif method == 'PUT':
+                response = requests.put(url, json=data, headers=test_headers)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=test_headers)
+
+            success = response.status_code == expected_status
+            result = {
+                "test_name": name,
+                "method": method,
+                "endpoint": endpoint,
+                "expected_status": expected_status,
+                "actual_status": response.status_code,
+                "success": success
+            }
+
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                if response.content:
+                    try:
+                        json_response = response.json()
+                        result["response_data"] = json_response
+                        return success, json_response
+                    except:
+                        result["response_data"] = response.text
+                        return success, response.text
+                return success, {}
+            else:
+                print(f"❌ Failed - Expected {expected_status}, got {response.status_code}")
+                result["error"] = response.text if response.text else "No error message"
+                print(f"   Error: {result['error']}")
+
+            self.test_results.append(result)
+            return success, {}
+
         except Exception as e:
-            self.log_test("Root endpoint", False, f"Connection error: {str(e)}")
-            return False
+            result = {
+                "test_name": name,
+                "method": method,
+                "endpoint": endpoint,
+                "expected_status": expected_status,
+                "actual_status": "EXCEPTION",
+                "success": False,
+                "error": str(e)
+            }
+            self.test_results.append(result)
+            print(f"❌ Failed - Exception: {str(e)}")
+            return False, {}
+
+    def test_basic_connectivity(self):
+        """Test basic API connectivity"""
+        print("=" * 60)
+        print("TESTING BASIC CONNECTIVITY")
+        print("=" * 60)
+        
+        success, data = self.run_test("API Root Endpoint", "GET", "")
+        if success:
+            print(f"   API Response: {data}")
+
+        return success
 
     def test_stats_endpoint(self):
-        """Test statistics endpoint"""
-        try:
-            response = requests.get(f"{self.base_url}/stats")
-            success = response.status_code == 200
-            if success:
-                data = response.json()
-                required_fields = ['total_locomotives', 'total_decoders', 'total_sound_projects', 'total_value']
-                for field in required_fields:
-                    if field not in data:
-                        success = False
-                        self.log_test("Stats endpoint structure", False, f"Missing field: {field}")
-                        return False
-            self.log_test("Stats endpoint", success, 
-                         f"Status: {response.status_code}" if not success else None)
-            return success
-        except Exception as e:
-            self.log_test("Stats endpoint", False, f"Error: {str(e)}")
-            return False
-
-    def test_locomotives_crud(self):
-        """Test locomotives CRUD operations"""
-        # Test GET locomotives
-        try:
-            response = requests.get(f"{self.base_url}/locomotives")
-            success = response.status_code == 200
-            self.log_test("GET locomotives", success, 
-                         f"Status: {response.status_code}" if not success else None)
-            if not success:
-                return False
+        """Test stats endpoint for locomotive types and rolling stock types"""
+        print("\n" + "=" * 60)
+        print("TESTING STATISTICS ENDPOINT")
+        print("=" * 60)
+        
+        success, data = self.run_test("Get Statistics", "GET", "stats")
+        if success and data:
+            print(f"   Total Locomotives: {data.get('total_locomotives', 0)}")
+            print(f"   Total Rolling Stock: {data.get('total_rolling_stock', 0)}")
+            print(f"   Locomotives by Type: {data.get('locomotives_by_type', {})}")
+            print(f"   Rolling Stock by Type: {data.get('rolling_stock_by_type', {})}")
             
-            existing_locomotives = response.json()
-            print(f"   Found {len(existing_locomotives)} existing locomotives")
-            
-            # Test CREATE locomotive
-            test_locomotive = {
-                "brand": "Test Brand",
-                "model": "Test Model", 
-                "reference": "TEST001",
-                "dcc_address": 99,
-                "decoder_brand": "ESU",
-                "decoder_model": "LokSound Test",
-                "condition": "nuevo",
-                "price": 150.00,
-                "functions": [
-                    {
-                        "function_number": "F0",
-                        "description": "Test headlight",
-                        "is_sound": False
-                    }
-                ],
-                "cv_modifications": [
-                    {
-                        "cv_number": 3,
-                        "value": 10,
-                        "description": "Test CV modification"
-                    }
-                ]
-            }
-            
-            response = requests.post(f"{self.base_url}/locomotives", json=test_locomotive)
-            success = response.status_code == 200
-            self.log_test("POST locomotive", success,
-                         f"Status: {response.status_code}" if not success else None)
-            if not success:
-                return False
-            
-            created_loco = response.json()
-            loco_id = created_loco.get('id')
-            
-            if not loco_id:
-                self.log_test("POST locomotive ID", False, "No ID returned")
-                return False
-            
-            # Test GET specific locomotive
-            response = requests.get(f"{self.base_url}/locomotives/{loco_id}")
-            success = response.status_code == 200
-            self.log_test("GET specific locomotive", success,
-                         f"Status: {response.status_code}" if not success else None)
-            if not success:
-                return False
-            
-            # Test UPDATE locomotive
-            update_data = test_locomotive.copy()
-            update_data["brand"] = "Updated Brand"
-            update_data["price"] = 200.00
-            
-            response = requests.put(f"{self.base_url}/locomotives/{loco_id}", json=update_data)
-            success = response.status_code == 200
-            self.log_test("PUT locomotive", success,
-                         f"Status: {response.status_code}" if not success else None)
-            if not success:
-                return False
-            
-            # Test DELETE locomotive
-            response = requests.delete(f"{self.base_url}/locomotives/{loco_id}")
-            success = response.status_code == 200
-            self.log_test("DELETE locomotive", success,
-                         f"Status: {response.status_code}" if not success else None)
-            
-            return success
-            
-        except Exception as e:
-            self.log_test("Locomotives CRUD", False, f"Error: {str(e)}")
-            return False
-
-    def test_decoders_crud(self):
-        """Test decoders CRUD operations"""
-        try:
-            # Test GET decoders
-            response = requests.get(f"{self.base_url}/decoders")
-            success = response.status_code == 200
-            self.log_test("GET decoders", success,
-                         f"Status: {response.status_code}" if not success else None)
-            if not success:
-                return False
-            
-            existing_decoders = response.json()
-            print(f"   Found {len(existing_decoders)} existing decoders")
-            
-            # Test CREATE decoder
-            test_decoder = {
-                "brand": "Test Decoder Brand",
-                "model": "Test Model",
-                "type": "sound", 
-                "scale": "N",
-                "interface": "NEM651",
-                "sound_capable": True,
-                "max_functions": 28,
-                "notes": "Test decoder notes"
-            }
-            
-            response = requests.post(f"{self.base_url}/decoders", json=test_decoder)
-            success = response.status_code == 200
-            self.log_test("POST decoder", success,
-                         f"Status: {response.status_code}" if not success else None)
-            if not success:
-                return False
-            
-            created_decoder = response.json()
-            decoder_id = created_decoder.get('id')
-            
-            if not decoder_id:
-                self.log_test("POST decoder ID", False, "No ID returned")
-                return False
-            
-            # Test GET specific decoder  
-            response = requests.get(f"{self.base_url}/decoders/{decoder_id}")
-            success = response.status_code == 200
-            self.log_test("GET specific decoder", success,
-                         f"Status: {response.status_code}" if not success else None)
-            if not success:
-                return False
-            
-            # Test UPDATE decoder
-            update_data = test_decoder.copy()
-            update_data["brand"] = "Updated Decoder Brand"
-            
-            response = requests.put(f"{self.base_url}/decoders/{decoder_id}", json=update_data)
-            success = response.status_code == 200
-            self.log_test("PUT decoder", success,
-                         f"Status: {response.status_code}" if not success else None)
-            if not success:
-                return False
-            
-            # Test DELETE decoder
-            response = requests.delete(f"{self.base_url}/decoders/{decoder_id}")
-            success = response.status_code == 200
-            self.log_test("DELETE decoder", success,
-                         f"Status: {response.status_code}" if not success else None)
-            
-            return success
-            
-        except Exception as e:
-            self.log_test("Decoders CRUD", False, f"Error: {str(e)}")
-            return False
-
-    def test_sound_projects_crud(self):
-        """Test sound projects CRUD operations"""
-        try:
-            # Test GET sound projects
-            response = requests.get(f"{self.base_url}/sound-projects")
-            success = response.status_code == 200
-            self.log_test("GET sound projects", success,
-                         f"Status: {response.status_code}" if not success else None)
-            if not success:
-                return False
-            
-            existing_projects = response.json()
-            print(f"   Found {len(existing_projects)} existing sound projects")
-            
-            # Test CREATE sound project
-            test_project = {
-                "name": "Test Sound Project",
-                "decoder_brand": "ESU",
-                "decoder_model": "LokSound Test",
-                "locomotive_type": "Test Locomotive",
-                "version": "1.0",
-                "sounds": ["horn", "bell", "motor"],
-                "notes": "Test sound project notes"
-            }
-            
-            response = requests.post(f"{self.base_url}/sound-projects", json=test_project)
-            success = response.status_code == 200
-            self.log_test("POST sound project", success,
-                         f"Status: {response.status_code}" if not success else None)
-            if not success:
-                return False
-            
-            created_project = response.json()
-            project_id = created_project.get('id')
-            
-            if not project_id:
-                self.log_test("POST sound project ID", False, "No ID returned")
-                return False
-            
-            # Test GET specific sound project
-            response = requests.get(f"{self.base_url}/sound-projects/{project_id}")
-            success = response.status_code == 200
-            self.log_test("GET specific sound project", success,
-                         f"Status: {response.status_code}" if not success else None)
-            if not success:
-                return False
-            
-            # Test UPDATE sound project
-            update_data = test_project.copy()
-            update_data["name"] = "Updated Sound Project"
-            update_data["sounds"] = ["updated_horn", "updated_bell"]
-            
-            response = requests.put(f"{self.base_url}/sound-projects/{project_id}", json=update_data)
-            success = response.status_code == 200
-            self.log_test("PUT sound project", success,
-                         f"Status: {response.status_code}" if not success else None)
-            if not success:
-                return False
-            
-            # Test DELETE sound project
-            response = requests.delete(f"{self.base_url}/sound-projects/{project_id}")
-            success = response.status_code == 200
-            self.log_test("DELETE sound project", success,
-                         f"Status: {response.status_code}" if not success else None)
-            
-            return success
-            
-        except Exception as e:
-            self.log_test("Sound Projects CRUD", False, f"Error: {str(e)}")
-            return False
-
-    def test_error_handling(self):
-        """Test API error handling"""
-        try:
-            # Test 404 for non-existent locomotive
-            response = requests.get(f"{self.base_url}/locomotives/nonexistent-id")
-            success = response.status_code == 404
-            self.log_test("404 handling for locomotives", success,
-                         f"Expected 404, got {response.status_code}" if not success else None)
-            
-            # Test 404 for non-existent decoder  
-            response = requests.get(f"{self.base_url}/decoders/nonexistent-id")
-            success = response.status_code == 404
-            self.log_test("404 handling for decoders", success,
-                         f"Expected 404, got {response.status_code}" if not success else None)
-            
-            # Test 404 for non-existent sound project
-            response = requests.get(f"{self.base_url}/sound-projects/nonexistent-id")
-            success = response.status_code == 404
-            self.log_test("404 handling for sound projects", success,
-                         f"Expected 404, got {response.status_code}" if not success else None)
+            # Verify required fields exist
+            required_fields = ['total_locomotives', 'total_rolling_stock', 'locomotives_by_type', 'rolling_stock_by_type']
+            for field in required_fields:
+                if field not in data:
+                    print(f"   ⚠️  Missing required field: {field}")
+                    return False
             
             return True
-            
-        except Exception as e:
-            self.log_test("Error handling", False, f"Error: {str(e)}")
+        return success
+
+    def test_locomotive_crud_with_types(self):
+        """Test locomotive CRUD operations with new locomotive_type field"""
+        print("\n" + "=" * 60)
+        print("TESTING LOCOMOTIVE CRUD WITH TYPES")
+        print("=" * 60)
+        
+        # Test GET all locomotives
+        success, locomotives = self.run_test("Get All Locomotives", "GET", "locomotives")
+        if not success:
             return False
+
+        # Test creating locomotive with locomotive_type
+        locomotive_data = {
+            "brand": "Test Brand",
+            "model": "Test Electric Locomotive",
+            "reference": "TEST-001",
+            "locomotive_type": "electrica",
+            "dcc_address": 1001,
+            "condition": "nuevo",
+            "decoder_brand": "ESU",
+            "decoder_model": "LokSound 5",
+            "price": 199.99,
+            "notes": "Test locomotive with electric type"
+        }
+        
+        success, response = self.run_test("Create Locomotive with Type", "POST", "locomotives", 200, locomotive_data)
+        if not success:
+            return False
+        
+        locomotive_id = response.get('id')
+        if not locomotive_id:
+            print("❌ No locomotive ID returned in create response")
+            return False
+        
+        print(f"   Created locomotive ID: {locomotive_id}")
+        
+        # Test GET single locomotive
+        success, locomotive = self.run_test("Get Single Locomotive", "GET", f"locomotives/{locomotive_id}")
+        if success:
+            print(f"   Locomotive Type: {locomotive.get('locomotive_type', 'NOT SET')}")
+            if locomotive.get('locomotive_type') != 'electrica':
+                print(f"   ⚠️  Wrong locomotive type: expected 'electrica', got '{locomotive.get('locomotive_type')}'")
+        
+        # Test updating locomotive with different type
+        update_data = locomotive_data.copy()
+        update_data['locomotive_type'] = 'diesel'
+        update_data['model'] = 'Test Diesel Locomotive'
+        
+        success, _ = self.run_test("Update Locomotive Type", "PUT", f"locomotives/{locomotive_id}", 200, update_data)
+        if success:
+            # Verify the update worked
+            success, updated_loco = self.run_test("Verify Updated Locomotive", "GET", f"locomotives/{locomotive_id}")
+            if success and updated_loco.get('locomotive_type') == 'diesel':
+                print(f"   ✅ Locomotive type updated successfully to: {updated_loco.get('locomotive_type')}")
+            else:
+                print(f"   ❌ Locomotive type not updated correctly")
+                success = False
+        
+        # Test different locomotive types
+        types_to_test = ['vapor', 'automotor', 'alta_velocidad', 'otro']
+        for loco_type in types_to_test:
+            test_data = locomotive_data.copy()
+            test_data['locomotive_type'] = loco_type
+            test_data['model'] = f'Test {loco_type.title()} Locomotive'
+            test_data['reference'] = f'TEST-{loco_type.upper()}'
+            test_data['dcc_address'] = 2000 + len(loco_type)
+            
+            success, response = self.run_test(f"Create {loco_type.title()} Locomotive", "POST", "locomotives", 200, test_data)
+            if success and response.get('id'):
+                # Clean up
+                self.run_test(f"Delete {loco_type.title()} Locomotive", "DELETE", f"locomotives/{response.get('id')}", 200)
+        
+        # Test DELETE
+        success, _ = self.run_test("Delete Test Locomotive", "DELETE", f"locomotives/{locomotive_id}", 200)
+        
+        return success
+
+    def test_rolling_stock_crud(self):
+        """Test rolling stock CRUD operations"""
+        print("\n" + "=" * 60)
+        print("TESTING ROLLING STOCK CRUD")
+        print("=" * 60)
+        
+        # Test GET all rolling stock
+        success, stock_list = self.run_test("Get All Rolling Stock", "GET", "rolling-stock")
+        if not success:
+            return False
+        
+        print(f"   Found {len(stock_list)} rolling stock items")
+        
+        # Test creating rolling stock
+        stock_data = {
+            "brand": "Roco",
+            "model": "Test Talgo Coach",
+            "reference": "TEST-COACH-001",
+            "stock_type": "coche_viajeros",
+            "condition": "nuevo",
+            "era": "VI",
+            "railway_company": "RENFE",
+            "price": 45.90,
+            "notes": "Test coach for rolling stock functionality"
+        }
+        
+        success, response = self.run_test("Create Rolling Stock", "POST", "rolling-stock", 200, stock_data)
+        if not success:
+            return False
+        
+        stock_id = response.get('id')
+        if not stock_id:
+            print("❌ No rolling stock ID returned in create response")
+            return False
+        
+        print(f"   Created rolling stock ID: {stock_id}")
+        
+        # Test GET single rolling stock
+        success, stock_item = self.run_test("Get Single Rolling Stock", "GET", f"rolling-stock/{stock_id}")
+        if success:
+            print(f"   Stock Type: {stock_item.get('stock_type', 'NOT SET')}")
+            print(f"   Railway Company: {stock_item.get('railway_company', 'NOT SET')}")
+        
+        # Test updating rolling stock
+        update_data = stock_data.copy()
+        update_data['stock_type'] = 'vagon_mercancias'
+        update_data['model'] = 'Test Freight Wagon'
+        
+        success, _ = self.run_test("Update Rolling Stock", "PUT", f"rolling-stock/{stock_id}", 200, update_data)
+        if success:
+            # Verify the update worked
+            success, updated_stock = self.run_test("Verify Updated Rolling Stock", "GET", f"rolling-stock/{stock_id}")
+            if success and updated_stock.get('stock_type') == 'vagon_mercancias':
+                print(f"   ✅ Stock type updated successfully to: {updated_stock.get('stock_type')}")
+            else:
+                print(f"   ❌ Stock type not updated correctly")
+                success = False
+        
+        # Test different stock types
+        types_to_test = ['furgon', 'otro']
+        for stock_type in types_to_test:
+            test_data = stock_data.copy()
+            test_data['stock_type'] = stock_type
+            test_data['model'] = f'Test {stock_type.title()}'
+            test_data['reference'] = f'TEST-{stock_type.upper()}'
+            
+            success, response = self.run_test(f"Create {stock_type.title()} Stock", "POST", "rolling-stock", 200, test_data)
+            if success and response.get('id'):
+                # Clean up
+                self.run_test(f"Delete {stock_type.title()} Stock", "DELETE", f"rolling-stock/{response.get('id')}", 200)
+        
+        # Test DELETE
+        success, _ = self.run_test("Delete Test Rolling Stock", "DELETE", f"rolling-stock/{stock_id}", 200)
+        
+        return success
+
+    def test_error_handling(self):
+        """Test error handling for non-existent resources"""
+        print("\n" + "=" * 60)
+        print("TESTING ERROR HANDLING")
+        print("=" * 60)
+        
+        # Test 404 responses
+        tests = [
+            ("Get Non-existent Locomotive", "GET", "locomotives/non-existent-id", 404),
+            ("Get Non-existent Rolling Stock", "GET", "rolling-stock/non-existent-id", 404),
+            ("Update Non-existent Locomotive", "PUT", "locomotives/non-existent-id", 404, {"brand": "test"}),
+            ("Update Non-existent Rolling Stock", "PUT", "rolling-stock/non-existent-id", 404, {"brand": "test"}),
+            ("Delete Non-existent Locomotive", "DELETE", "locomotives/non-existent-id", 404),
+            ("Delete Non-existent Rolling Stock", "DELETE", "rolling-stock/non-existent-id", 404)
+        ]
+        
+        all_success = True
+        for test_name, method, endpoint, expected_status, *data in tests:
+            success, _ = self.run_test(test_name, method, endpoint, expected_status, data[0] if data else None)
+            if not success:
+                all_success = False
+        
+        return all_success
 
     def run_all_tests(self):
-        """Run all tests and return results"""
-        print("🧪 Starting Railway Collection API Tests...")
-        print(f"Testing against: {self.base_url}")
-        print("=" * 50)
+        """Run all test suites"""
+        print("🚂 STARTING RAILWAY COLLECTION API TESTS")
+        print("=" * 80)
         
-        # Basic connectivity
-        if not self.test_root_endpoint():
-            print("❌ Cannot connect to API - stopping tests")
-            return False
+        test_suites = [
+            ("Basic Connectivity", self.test_basic_connectivity),
+            ("Statistics Endpoint", self.test_stats_endpoint),
+            ("Locomotive CRUD with Types", self.test_locomotive_crud_with_types),
+            ("Rolling Stock CRUD", self.test_rolling_stock_crud),
+            ("Error Handling", self.test_error_handling)
+        ]
         
-        # Core functionality tests
-        self.test_stats_endpoint()
-        self.test_locomotives_crud()
-        self.test_decoders_crud() 
-        self.test_sound_projects_crud()
-        self.test_error_handling()
+        suite_results = []
+        for suite_name, test_func in test_suites:
+            try:
+                result = test_func()
+                suite_results.append((suite_name, result))
+                print(f"\n📊 {suite_name}: {'✅ PASSED' if result else '❌ FAILED'}")
+            except Exception as e:
+                suite_results.append((suite_name, False))
+                print(f"\n📊 {suite_name}: ❌ FAILED (Exception: {e})")
         
-        # Results
-        print("=" * 50)
-        print(f"📊 Tests completed: {self.tests_passed}/{self.tests_run}")
-        success_rate = (self.tests_passed / self.tests_run) * 100 if self.tests_run > 0 else 0
-        print(f"✨ Success rate: {success_rate:.1f}%")
+        # Final Results
+        print("\n" + "=" * 80)
+        print("🏁 FINAL TEST RESULTS")
+        print("=" * 80)
         
-        return self.tests_passed == self.tests_run
+        total_suites = len(suite_results)
+        passed_suites = sum(1 for _, result in suite_results if result)
+        
+        for suite_name, result in suite_results:
+            status = "✅ PASSED" if result else "❌ FAILED"
+            print(f"   {suite_name}: {status}")
+        
+        print(f"\n📊 Overall Results:")
+        print(f"   Test Suites: {passed_suites}/{total_suites} passed")
+        print(f"   Individual Tests: {self.tests_passed}/{self.tests_run} passed")
+        print(f"   Success Rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
+        
+        return passed_suites == total_suites
 
 def main():
-    tester = RailwayCollectionAPITester()
-    success = tester.run_all_tests()
-    return 0 if success else 1
+    tester = RailwayAPITester()
+    
+    try:
+        success = tester.run_all_tests()
+        return 0 if success else 1
+    except KeyboardInterrupt:
+        print("\n⏹️  Tests interrupted by user")
+        return 1
+    except Exception as e:
+        print(f"\n💥 Unexpected error: {e}")
+        return 1
 
 if __name__ == "__main__":
     sys.exit(main())
