@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Train, Cpu, Volume2, Euro, Plus, TrendingUp } from "lucide-react";
+import { Train, Cpu, Volume2, Euro, Plus, TrendingUp, TrainTrack } from "lucide-react";
 import { getStats, getLocomotives } from "../lib/api";
 import { Button } from "../components/ui/button";
 
@@ -56,6 +56,14 @@ const Dashboard = () => {
       link: "/locomotives"
     },
     {
+      value: stats?.total_rolling_stock || 0,
+      label: "Vagones/Coches",
+      icon: TrainTrack,
+      color: "text-green-600",
+      bgColor: "bg-green-50",
+      link: "/rolling-stock"
+    },
+    {
       value: stats?.total_decoders || 0,
       label: "Decodificadores",
       icon: Cpu,
@@ -64,19 +72,11 @@ const Dashboard = () => {
       link: "/decoders"
     },
     {
-      value: stats?.total_sound_projects || 0,
-      label: "Proyectos Sonido",
-      icon: Volume2,
-      color: "text-amber-600",
-      bgColor: "bg-amber-50",
-      link: "/sound-projects"
-    },
-    {
       value: stats?.total_value?.toFixed(2) || "0.00",
       label: "Valor Total",
       icon: Euro,
-      color: "text-green-600",
-      bgColor: "bg-green-50",
+      color: "text-amber-600",
+      bgColor: "bg-amber-50",
       prefix: "€"
     }
   ];
@@ -142,6 +142,16 @@ const Dashboard = () => {
                 >
                   <Train className="w-4 h-4" />
                   Nueva Locomotora
+                </Button>
+              </Link>
+              <Link to="/rolling-stock/new" className="block">
+                <Button 
+                  variant="outline"
+                  className="w-full justify-start gap-3 font-mono uppercase tracking-widest text-xs border-slate-300"
+                  data-testid="add-rolling-stock-btn"
+                >
+                  <TrainTrack className="w-4 h-4" />
+                  Nuevo Vagón/Coche
                 </Button>
               </Link>
               <Link to="/decoders/new" className="block">
