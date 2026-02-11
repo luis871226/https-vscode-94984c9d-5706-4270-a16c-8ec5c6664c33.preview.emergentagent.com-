@@ -41,6 +41,10 @@ export const deleteRollingStock = (id) => api.delete(`/rolling-stock/${id}`);
 // Backup/Restore
 export const createBackup = () => api.get('/backup');
 export const restoreBackup = (data) => api.post('/restore', data);
+export const getBackupHistory = () => api.get('/backup/history');
+export const clearBackupHistory = () => api.delete('/backup/history');
+export const getBackupSettings = () => api.get('/backup/settings');
+export const saveBackupSettings = (data) => api.post('/backup/settings', data);
 
 // Statistics
 export const getStats = () => api.get('/stats');
