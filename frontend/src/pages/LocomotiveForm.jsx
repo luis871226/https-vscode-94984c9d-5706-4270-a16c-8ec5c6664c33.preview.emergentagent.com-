@@ -283,6 +283,46 @@ const LocomotiveForm = () => {
           </div>
         </fieldset>
 
+        {/* Prototipo */}
+        <fieldset className="form-fieldset">
+          <legend className="form-legend">Prototipo</legend>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="railway-label">Esquema de Pintura</label>
+              <Input
+                name="paint_scheme"
+                value={formData.paint_scheme}
+                onChange={handleChange}
+                className="railway-input w-full"
+                placeholder="Ej: Azul/Amarillo RENFE"
+                data-testid="input-paint-scheme"
+              />
+            </div>
+            <div>
+              <label className="railway-label">Matrícula / Número</label>
+              <Input
+                name="registration_number"
+                value={formData.registration_number}
+                onChange={handleChange}
+                className="railway-input w-full"
+                placeholder="Ej: 252-001-2"
+                data-testid="input-registration-number"
+              />
+            </div>
+            <div>
+              <label className="railway-label">Tipo Prototipo</label>
+              <Input
+                name="prototype_type"
+                value={formData.prototype_type}
+                onChange={handleChange}
+                className="railway-input w-full"
+                placeholder="Ej: Locomotora Universal"
+                data-testid="input-prototype-type"
+              />
+            </div>
+          </div>
+        </fieldset>
+
         {/* Technical Info */}
         <fieldset className="form-fieldset">
           <legend className="form-legend">Información Técnica DCC</legend>
