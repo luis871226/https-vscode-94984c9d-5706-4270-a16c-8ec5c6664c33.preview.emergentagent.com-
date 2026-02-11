@@ -28,6 +28,7 @@ const LocomotiveForm = () => {
     brand: "",
     model: "",
     reference: "",
+    locomotive_type: "electrica",
     dcc_address: 3,
     decoder_brand: "",
     decoder_model: "",
@@ -179,6 +180,14 @@ const LocomotiveForm = () => {
 
   const functionNumbers = Array.from({ length: 29 }, (_, i) => `F${i}`);
   const eras = ["I", "II", "III", "IV", "V", "VI"];
+  const locomotiveTypes = [
+    { value: "electrica", label: "Eléctrica" },
+    { value: "diesel", label: "Diésel" },
+    { value: "vapor", label: "Vapor" },
+    { value: "automotor", label: "Automotor" },
+    { value: "alta_velocidad", label: "Alta Velocidad" },
+    { value: "otro", label: "Otro" },
+  ];
   const railwayCompanies = ["RENFE", "DB", "SNCF", "FS", "OBB", "SBB", "NS", "NMBS/SNCB", "CP", "DSB", "NSB", "VR", "PKP", "CD", "MAV", "CFR", "BDZ", "TCDD", "JR", "Amtrak", "CN", "CP Rail", "Otra"];
 
   if (loading) {
