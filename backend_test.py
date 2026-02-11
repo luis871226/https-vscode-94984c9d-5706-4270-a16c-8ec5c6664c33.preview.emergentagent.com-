@@ -112,10 +112,10 @@ class RailwayAPITester:
             return True
         return success
 
-    def test_locomotive_crud_with_types(self):
-        """Test locomotive CRUD operations with new locomotive_type field"""
+    def test_locomotive_crud_with_types_and_prototipo(self):
+        """Test locomotive CRUD operations with new locomotive_type field and Prototipo fields"""
         print("\n" + "=" * 60)
-        print("TESTING LOCOMOTIVE CRUD WITH TYPES")
+        print("TESTING LOCOMOTIVE CRUD WITH TYPES AND PROTOTIPO")
         print("=" * 60)
         
         # Test GET all locomotives
@@ -123,18 +123,22 @@ class RailwayAPITester:
         if not success:
             return False
 
-        # Test creating locomotive with locomotive_type
+        # Test creating locomotive with locomotive_type and Prototipo fields
         locomotive_data = {
             "brand": "Test Brand",
             "model": "Test Electric Locomotive",
             "reference": "TEST-001",
             "locomotive_type": "electrica",
+            # New Prototipo fields
+            "paint_scheme": "Azul/Amarillo RENFE Test",
+            "registration_number": "TEST-001-2",
+            "prototype_type": "Locomotora Universal Test",
             "dcc_address": 1001,
             "condition": "nuevo",
             "decoder_brand": "ESU",
             "decoder_model": "LokSound 5",
             "price": 199.99,
-            "notes": "Test locomotive with electric type"
+            "notes": "Test locomotive with electric type and prototipo fields"
         }
         
         success, response = self.run_test("Create Locomotive with Type", "POST", "locomotives", 200, locomotive_data)
