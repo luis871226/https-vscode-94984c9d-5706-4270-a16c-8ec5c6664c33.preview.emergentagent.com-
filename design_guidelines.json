@@ -1,0 +1,133 @@
+{
+  "identity": {
+    "name": "E1 - The Anti-AI Designer",
+    "persona": "Swiss Precision x Railway Industrial. Obsessed with grids, clarity, and tactile mechanical controls.",
+    "theme_strategy": "Light Theme (The 'Collector's Studio'). Clean, organized, museum-grade data presentation.",
+    "core_principles": [
+      "Data as Art: Show the specs, don't hide them.",
+      "Tactile Utility: Buttons should feel like switches.",
+      "Heritage Modern: Classic railway aesthetics (timetables, tickets) interpreted through modern UI.",
+      "High Density, High Clarity: Dense tables, but massive breathing room around containers."
+    ]
+  },
+  "palette": {
+    "mode": "light",
+    "background": {
+      "default": "#FDFCF8",
+      "paper": "#F4F1EA",
+      "subtle": "#E8E6DF"
+    },
+    "text": {
+      "primary": "#1A202C",
+      "secondary": "#4A5568",
+      "muted": "#718096",
+      "inverse": "#FFFFFF"
+    },
+    "brand": {
+      "primary": "#C53030",
+      "primary_foreground": "#FFFFFF",
+      "secondary": "#2B6CB0",
+      "accent": "#D69E2E",
+      "signal_green": "#38A169",
+      "signal_red": "#E53E3E",
+      "signal_yellow": "#D69E2E"
+    },
+    "ui_elements": {
+      "border": "#CBD5E0",
+      "border_strong": "#718096",
+      "input_bg": "#FFFFFF"
+    }
+  },
+  "typography": {
+    "font_family": {
+      "headings": "\"Oswald\", \"Chivo\", sans-serif",
+      "body": "\"Public Sans\", \"Inter\", sans-serif",
+      "mono": "\"JetBrains Mono\", monospace"
+    },
+    "styles": {
+      "h1": "font-heading text-5xl font-bold tracking-tight uppercase text-primary",
+      "h2": "font-heading text-3xl font-semibold tracking-tight text-primary",
+      "h3": "font-heading text-xl font-medium uppercase tracking-widest text-secondary",
+      "body": "font-body text-base leading-relaxed text-slate-800",
+      "label": "font-mono text-xs font-bold uppercase tracking-wider text-slate-500",
+      "data_value": "font-mono text-sm font-medium text-slate-900"
+    }
+  },
+  "layout": {
+    "grid_system": "Bento Grid (Mode B for Dashboard, Mode A for Details)",
+    "container_padding": "p-8 md:p-12 lg:p-16",
+    "spacing_scale": {
+      "section_gap": "gap-12",
+      "element_gap": "gap-4",
+      "internal_padding": "p-6"
+    },
+    "border_radius": {
+      "card": "rounded-none",
+      "button": "rounded-sm",
+      "input": "rounded-none"
+    }
+  },
+  "components": {
+    "cards": {
+      "style": "The 'Ticket' Look. White background, 1px solid border (slate-300). Optional: 'Notched' corners using clip-path for a mechanical feel.",
+      "shadow": "shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)]",
+      "hover": "hover:shadow-[4px_4px_0px_0px_rgba(197,48,48,0.2)] hover:-translate-y-0.5 transition-all duration-200"
+    },
+    "buttons": {
+      "primary": "bg-brand-primary text-white font-mono uppercase tracking-widest px-6 py-3 rounded-sm shadow-sm hover:bg-red-700 active:translate-y-px",
+      "secondary": "bg-white border border-slate-300 text-slate-700 font-mono uppercase tracking-widest px-6 py-3 rounded-sm hover:bg-slate-50 active:translate-y-px",
+      "ghost": "text-slate-600 hover:text-brand-primary hover:bg-red-50 font-mono uppercase tracking-widest px-4 py-2"
+    },
+    "inputs": {
+      "style": "bg-white border border-slate-300 px-4 py-3 rounded-none font-mono text-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-colors",
+      "label_style": "block text-xs font-bold uppercase tracking-widest text-slate-500 mb-2"
+    },
+    "tables": {
+      "style": "Dense, technical. Header: bg-slate-100 text-xs font-bold uppercase tracking-wider text-slate-600 border-b-2 border-slate-300. Rows: border-b border-slate-200 hover:bg-yellow-50 font-mono text-sm.",
+      "cell_padding": "px-4 py-3"
+    }
+  },
+  "assets": {
+    "images": {
+      "hero_loco": "https://images.unsplash.com/photo-1563463059126-6425a2c3de0a",
+      "list_thumb_1": "https://images.unsplash.com/photo-1767465837082-7c49a4672c36",
+      "list_thumb_2": "https://images.unsplash.com/photo-1565017051377-5d1ec6448c94",
+      "blueprint_bg": "https://images.unsplash.com/photo-1712697236921-f02a449dd9e5",
+      "circuit_board": "https://images.unsplash.com/photo-1569615313731-7407da4f4594",
+      "station_mood": "https://images.unsplash.com/photo-1645874197149-4656aa33faae"
+    },
+    "usage": {
+      "dashboard_hero": "Use 'hero_loco' with a 'multiply' blend mode overlay or matte finish.",
+      "background_texture": "Use 'blueprint_bg' as a subtle background pattern for the 'Digital/Decoders' section with 5% opacity.",
+      "decoder_card": "Use 'circuit_board' as the cover image for the Decoder management card."
+    }
+  },
+  "visual_enhancers": {
+    "noise_texture": "Add a subtle SVG noise filter to the main background to break the digital flatness.",
+    "scanlines": "Optional: Very subtle vertical lines (every 200px) to simulate a grid/logbook.",
+    "status_lights": "Use CSS box-shadow glow for status indicators (green/red/yellow). e.g., 'shadow-[0_0_8px_rgba(56,161,105,0.6)]'"
+  },
+  "animations": {
+    "micro": "duration-150 ease-out",
+    "page_transition": "Simple fade-in (opacity 0 to 100) with slight slide-up (translate-y-4 to 0).",
+    "hover_effects": "Mechanical. Instant or very fast (<0.2s). No bouncy springs."
+  },
+  "instructions_to_main_agent": [
+    "1. IMPLEMENTATION PRIORITY: Focus on the 'Collection List' and 'Locomotive Detail' views first. These are the core value props.",
+    "2. NOISE & TEXTURE: Do not just use flat colors. Add the noise texture to the body background.",
+    "3. DATA DENSITY: In the list view, do not waste space. Use a dense table layout. Collectors want to see many rows at once.",
+    "4. FORM DESIGN: Organize the 'Add/Edit Locomotive' form into logical groups (Basic Info, Technical Specs, Purchase Data). Use fieldsets with legends.",
+    "5. PREVIEW PANELS: When clicking a row in the list, try to open a 'Side Sheet' or 'Drawer' instead of a full page navigation if possible, to keep context.",
+    "6. USE SHADCN: Heavily customize the radius (set to 0 or 2px) and shadows to match the 'Industrial' look.",
+    "7. DATA-TESTID: Ensure EVERY interactive element (buttons, inputs, rows) has a data-testid attribute."
+  ],
+  "universal_guidelines": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
+    "Don't make generic centered layouts. Use grids.",
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Every interaction needs micro-animations.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "Subtle grain textures, noise overlays, custom cursors.",
+    "NEVER use AI assistant Emoji characters."
+  ]
+}
