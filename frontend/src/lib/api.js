@@ -38,6 +38,10 @@ export const createRollingStock = (data) => api.post('/rolling-stock', data);
 export const updateRollingStock = (id, data) => api.put(`/rolling-stock/${id}`, data);
 export const deleteRollingStock = (id) => api.delete(`/rolling-stock/${id}`);
 
+// Backup/Restore
+export const createBackup = () => api.get('/backup');
+export const restoreBackup = (data) => api.post('/restore', data);
+
 // Statistics
 export const getStats = () => api.get('/stats');
 
