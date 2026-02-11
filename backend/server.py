@@ -503,7 +503,8 @@ async def get_backup_settings():
     """Get backup reminder settings"""
     settings = await db.backup_settings.find_one({}, {"_id": 0})
     if not settings:
-        return BackupSettings().model_dump()
+        default_settings = BackupSettings()
+        return default_settings.model_dump()
     return settings
 
 @api_router.post("/backup/settings")
@@ -511,9 +512,10 @@ async def save_backup_settings(settings: BackupSettings):
     """Save backup reminder settings"""
     settings_dict = settings.model_dump()
     await db.backup_settings.delete_many({})
-    result = await db.backup_settings.insert_one(settings_dict)
-    # Return the settings dict without MongoDB's _id
-    return settings_dict
+    await db.backup_settings.insert_one(settings_dict)
+    # Fetch and return the saved settings without _id
+    saved_settings = await db.backup_settings.find_one({}, {"_id": 0})
+    return saved_settings
 
 @api_router.post("/restore")
 async def restore_backup(backup: BackupData):
