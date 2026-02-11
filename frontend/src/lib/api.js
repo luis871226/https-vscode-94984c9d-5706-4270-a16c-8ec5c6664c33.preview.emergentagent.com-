@@ -31,6 +31,13 @@ export const createSoundProject = (data) => api.post('/sound-projects', data);
 export const updateSoundProject = (id, data) => api.put(`/sound-projects/${id}`, data);
 export const deleteSoundProject = (id) => api.delete(`/sound-projects/${id}`);
 
+// Rolling Stock (Vagones/Coches)
+export const getRollingStock = () => api.get('/rolling-stock');
+export const getRollingStockItem = (id) => api.get(`/rolling-stock/${id}`);
+export const createRollingStock = (data) => api.post('/rolling-stock', data);
+export const updateRollingStock = (id, data) => api.put(`/rolling-stock/${id}`, data);
+export const deleteRollingStock = (id) => api.delete(`/rolling-stock/${id}`);
+
 // Statistics
 export const getStats = () => api.get('/stats');
 
