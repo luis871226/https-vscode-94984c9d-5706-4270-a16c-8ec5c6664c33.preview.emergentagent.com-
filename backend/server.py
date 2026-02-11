@@ -41,6 +41,7 @@ class LocomotiveBase(BaseModel):
     brand: str
     model: str
     reference: str
+    locomotive_type: str = "electrica"  # electrica, vapor, diesel, automotor, alta_velocidad, otro
     dcc_address: int
     decoder_brand: Optional[str] = None
     decoder_model: Optional[str] = None
@@ -54,6 +55,30 @@ class LocomotiveBase(BaseModel):
     photo: Optional[str] = None  # base64 encoded
     functions: List[FunctionMapping] = []
     cv_modifications: List[CVModification] = []
+
+# ============== ROLLING STOCK (VAGONES/COCHES) MODELS ==============
+
+class RollingStockBase(BaseModel):
+    brand: str
+    model: str
+    reference: str
+    stock_type: str = "vagon_mercancias"  # vagon_mercancias, coche_viajeros, furgon, otro
+    purchase_date: Optional[str] = None
+    price: Optional[float] = None
+    condition: str = "nuevo"  # nuevo, usado, restaurado
+    era: Optional[str] = None
+    railway_company: Optional[str] = None
+    notes: Optional[str] = None
+    photo: Optional[str] = None  # base64 encoded
+
+class RollingStockCreate(RollingStockBase):
+    pass
+
+class RollingStock(RollingStockBase):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class LocomotiveCreate(LocomotiveBase):
     pass
@@ -101,6 +126,7 @@ class SoundProject(SoundProjectBase):
 
 class StatsResponse(BaseModel):
     total_locomotives: int
+    total_rolling_stock: int
     total_decoders: int
     total_sound_projects: int
     total_value: float
@@ -108,6 +134,8 @@ class StatsResponse(BaseModel):
     locomotives_by_company: Dict[str, int]
     locomotives_by_condition: Dict[str, int]
     locomotives_by_decoder: Dict[str, int]
+    locomotives_by_type: Dict[str, int]
+    rolling_stock_by_type: Dict[str, int]
 
 # ============== LOCOMOTIVE ENDPOINTS ==============
 
@@ -273,20 +301,83 @@ async def delete_sound_project(project_id: str):
         raise HTTPException(status_code=404, detail="Proyecto de sonido no encontrado")
     return {"message": "Proyecto de sonido eliminado"}
 
+# ============== ROLLING STOCK ENDPOINTS ==============
+
+@api_router.get("/rolling-stock", response_model=List[RollingStock])
+async def get_rolling_stock():
+    stock = await db.rolling_stock.find({}, {"_id": 0}).to_list(1000)
+    for item in stock:
+        if isinstance(item.get('created_at'), str):
+            item['created_at'] = datetime.fromisoformat(item['created_at'])
+        if isinstance(item.get('updated_at'), str):
+            item['updated_at'] = datetime.fromisoformat(item['updated_at'])
+    return stock
+
+@api_router.get("/rolling-stock/{stock_id}", response_model=RollingStock)
+async def get_rolling_stock_item(stock_id: str):
+    item = await db.rolling_stock.find_one({"id": stock_id}, {"_id": 0})
+    if not item:
+        raise HTTPException(status_code=404, detail="Material rodante no encontrado")
+    if isinstance(item.get('created_at'), str):
+        item['created_at'] = datetime.fromisoformat(item['created_at'])
+    if isinstance(item.get('updated_at'), str):
+        item['updated_at'] = datetime.fromisoformat(item['updated_at'])
+    return item
+
+@api_router.post("/rolling-stock", response_model=RollingStock)
+async def create_rolling_stock(stock: RollingStockCreate):
+    stock_dict = stock.model_dump()
+    stock_obj = RollingStock(**stock_dict)
+    doc = stock_obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    await db.rolling_stock.insert_one(doc)
+    return stock_obj
+
+@api_router.put("/rolling-stock/{stock_id}", response_model=RollingStock)
+async def update_rolling_stock(stock_id: str, stock: RollingStockCreate):
+    existing = await db.rolling_stock.find_one({"id": stock_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Material rodante no encontrado")
+    
+    update_data = stock.model_dump()
+    update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
+    update_data['id'] = stock_id
+    update_data['created_at'] = existing.get('created_at', datetime.now(timezone.utc).isoformat())
+    
+    await db.rolling_stock.update_one({"id": stock_id}, {"$set": update_data})
+    
+    updated = await db.rolling_stock.find_one({"id": stock_id}, {"_id": 0})
+    if isinstance(updated.get('created_at'), str):
+        updated['created_at'] = datetime.fromisoformat(updated['created_at'])
+    if isinstance(updated.get('updated_at'), str):
+        updated['updated_at'] = datetime.fromisoformat(updated['updated_at'])
+    return updated
+
+@api_router.delete("/rolling-stock/{stock_id}")
+async def delete_rolling_stock(stock_id: str):
+    result = await db.rolling_stock.delete_one({"id": stock_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Material rodante no encontrado")
+    return {"message": "Material rodante eliminado"}
+
 # ============== STATISTICS ENDPOINT ==============
 
 @api_router.get("/stats", response_model=StatsResponse)
 async def get_stats():
     locomotives = await db.locomotives.find({}, {"_id": 0}).to_list(1000)
+    rolling_stock = await db.rolling_stock.find({}, {"_id": 0}).to_list(1000)
     decoders = await db.decoders.find({}, {"_id": 0}).to_list(1000)
     sound_projects = await db.sound_projects.find({}, {"_id": 0}).to_list(1000)
     
     total_value = sum(loco.get('price', 0) or 0 for loco in locomotives)
+    total_value += sum(stock.get('price', 0) or 0 for stock in rolling_stock)
     
     by_brand = {}
     by_company = {}
     by_condition = {}
     by_decoder = {}
+    by_loco_type = {}
     
     for loco in locomotives:
         brand = loco.get('brand', 'Desconocido')
@@ -302,16 +393,27 @@ async def get_stats():
         decoder = loco.get('decoder_brand', 'Sin decodificador')
         if decoder:
             by_decoder[decoder] = by_decoder.get(decoder, 0) + 1
+        
+        loco_type = loco.get('locomotive_type', 'otro')
+        by_loco_type[loco_type] = by_loco_type.get(loco_type, 0) + 1
+    
+    by_stock_type = {}
+    for stock in rolling_stock:
+        stock_type = stock.get('stock_type', 'otro')
+        by_stock_type[stock_type] = by_stock_type.get(stock_type, 0) + 1
     
     return StatsResponse(
         total_locomotives=len(locomotives),
+        total_rolling_stock=len(rolling_stock),
         total_decoders=len(decoders),
         total_sound_projects=len(sound_projects),
         total_value=total_value,
         locomotives_by_brand=by_brand,
         locomotives_by_company=by_company,
         locomotives_by_condition=by_condition,
-        locomotives_by_decoder=by_decoder
+        locomotives_by_decoder=by_decoder,
+        locomotives_by_type=by_loco_type,
+        rolling_stock_by_type=by_stock_type
     )
 
 # ============== ROOT ENDPOINT ==============
