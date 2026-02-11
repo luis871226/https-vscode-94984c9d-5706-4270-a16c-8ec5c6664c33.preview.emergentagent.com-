@@ -412,6 +412,138 @@ class RailwayAPITester:
         
         return True
 
+    def test_backup_history_and_settings(self):
+        """Test backup history and reminder settings functionality"""
+        print("\n" + "=" * 60)
+        print("TESTING BACKUP HISTORY AND SETTINGS")
+        print("=" * 60)
+        
+        # Test GET backup history (should be empty initially after clearing)
+        success, history_before = self.run_test("Get Backup History", "GET", "backup/history", 200)
+        if not success:
+            return False
+        
+        print(f"   Initial history entries: {len(history_before)}")
+        
+        # Test backup settings GET (should return defaults)
+        success, settings = self.run_test("Get Backup Settings", "GET", "backup/settings", 200)
+        if not success:
+            return False
+        
+        # Verify default settings structure
+        expected_settings_fields = ['reminder_enabled', 'reminder_frequency', 'last_reminder_shown']
+        settings_valid = True
+        
+        for field in expected_settings_fields:
+            if field not in settings:
+                print(f"   ❌ Missing settings field: {field}")
+                settings_valid = False
+            else:
+                print(f"   ✅ Settings field '{field}': {settings[field]}")
+        
+        if not settings_valid:
+            return False
+        
+        # Test updating backup settings
+        new_settings = {
+            "reminder_enabled": True,
+            "reminder_frequency": "daily",
+            "last_reminder_shown": None
+        }
+        
+        success, saved_settings = self.run_test("Save Backup Settings", "POST", "backup/settings", 200, new_settings)
+        if not success:
+            return False
+        
+        # Verify settings were saved correctly
+        if (saved_settings.get('reminder_enabled') == True and 
+            saved_settings.get('reminder_frequency') == 'daily'):
+            print(f"   ✅ Settings saved correctly")
+        else:
+            print(f"   ❌ Settings not saved correctly")
+            return False
+        
+        # Test different frequencies
+        frequencies = ['weekly', 'monthly']
+        for freq in frequencies:
+            test_settings = {
+                "reminder_enabled": True,
+                "reminder_frequency": freq,
+                "last_reminder_shown": None
+            }
+            
+            success, _ = self.run_test(f"Save {freq.title()} Frequency", "POST", "backup/settings", 200, test_settings)
+            if not success:
+                return False
+        
+        # Create a backup to test history functionality
+        success, backup_data = self.run_test("Create Backup for History", "GET", "backup", 200)
+        if not success:
+            return False
+        
+        # Test GET backup history after creating backup
+        success, history_after = self.run_test("Get Backup History After Backup", "GET", "backup/history", 200)
+        if not success:
+            return False
+        
+        print(f"   History entries after backup: {len(history_after)}")
+        
+        if len(history_after) > len(history_before):
+            print("   ✅ Backup added to history successfully")
+            
+            # Verify history entry structure
+            latest_entry = history_after[0]  # Should be sorted by created_at desc
+            required_history_fields = ['id', 'created_at', 'type', 'locomotives_count', 'rolling_stock_count', 'decoders_count', 'sound_projects_count']
+            
+            history_entry_valid = True
+            for field in required_history_fields:
+                if field not in latest_entry:
+                    print(f"   ❌ Missing history field: {field}")
+                    history_entry_valid = False
+                else:
+                    print(f"   ✅ History field '{field}': {latest_entry[field]}")
+            
+            if not history_entry_valid:
+                return False
+                
+            # Verify the counts match what we expect
+            expected_counts = {
+                'locomotives_count': len(backup_data['locomotives']),
+                'rolling_stock_count': len(backup_data['rolling_stock']),
+                'decoders_count': len(backup_data['decoders']),
+                'sound_projects_count': len(backup_data['sound_projects'])
+            }
+            
+            counts_match = True
+            for field, expected_value in expected_counts.items():
+                actual_value = latest_entry.get(field)
+                if actual_value != expected_value:
+                    print(f"   ❌ Wrong {field}: expected {expected_value}, got {actual_value}")
+                    counts_match = False
+                    
+            if counts_match:
+                print("   ✅ All backup counts in history are correct")
+            else:
+                return False
+        else:
+            print("   ❌ Backup was not added to history")
+            return False
+        
+        # Test DELETE backup history
+        success, _ = self.run_test("Clear Backup History", "DELETE", "backup/history", 200)
+        if not success:
+            return False
+        
+        # Verify history is cleared
+        success, history_cleared = self.run_test("Verify History Cleared", "GET", "backup/history", 200)
+        if success and len(history_cleared) == 0:
+            print("   ✅ Backup history cleared successfully")
+        else:
+            print(f"   ❌ History not cleared, still has {len(history_cleared)} entries")
+            return False
+        
+        return True
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚂 STARTING RAILWAY COLLECTION API TESTS")
