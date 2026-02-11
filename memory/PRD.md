@@ -1,80 +1,71 @@
 # Railway Collection Manager - PRD
 
 ## Problem Statement Original
-Aplicación para PC para gestionar una colección de modelismo ferroviario (Escala N) con base de datos dinámica, incluyendo apartado digital con decodificadores, funciones programadas, CVs y proyectos de sonido.
+Aplicación para PC para gestionar una colección de modelismo ferroviario (Escala N) con base de datos dinámica, incluyendo apartado digital con decodificadores, funciones programadas, CVs y proyectos de sonido. Incluye sección de vagones y coches de viajeros.
 
 ## User Personas
 - **Coleccionista de modelismo ferroviario**: Usuario que desea catalogar y gestionar su colección de trenes escala N
 - **Entusiasta DCC Digital**: Usuario interesado en documentar configuraciones de decodificadores, funciones programadas y proyectos de sonido
 
 ## Core Requirements (Static)
-1. Gestión de locomotoras con campos: marca, modelo, referencia, dirección DCC, decodificador, proyecto de sonido, fecha compra, precio, estado, época, compañía ferroviaria, notas, fotos
+1. Gestión de locomotoras con campos: marca, modelo, referencia, **tipo de locomotora** (eléctrica, diesel, vapor, automotor, alta velocidad), dirección DCC, decodificador, proyecto de sonido, fecha compra, precio, estado, época, compañía ferroviaria, notas, fotos
 2. Gestión de funciones programadas F0-F28 con descripción y tipo (sonido/no sonido)
 3. Seguimiento de modificaciones de CVs
 4. Catálogo de decodificadores con especificaciones técnicas
 5. Gestión de proyectos de sonido
-6. Dashboard con estadísticas de la colección
-7. Subida de fotos de locomotoras
-8. Tema visual claro
+6. **Sección de Vagones y Coches** (sin apartado digital): marca, modelo, referencia, tipo (vagón mercancías, coche viajeros, furgón), fecha compra, precio, estado, época, compañía, notas, fotos
+7. Dashboard con estadísticas de la colección
+8. Subida de fotos
+9. Tema visual claro
 
 ## What's Been Implemented - 11/02/2026
+
 ### Backend (FastAPI + MongoDB)
-- ✅ API completa REST para locomotoras (CRUD)
-- ✅ API completa REST para decodificadores (CRUD)
-- ✅ API completa REST para proyectos de sonido (CRUD)
-- ✅ Endpoint de estadísticas con métricas de colección
-- ✅ Modelos Pydantic para validación de datos
-- ✅ Subida de fotos en base64
+- ✅ API CRUD locomotoras con campo locomotive_type
+- ✅ API CRUD vagones/coches (rolling-stock) - sin apartado digital
+- ✅ API CRUD decodificadores
+- ✅ API CRUD proyectos de sonido
+- ✅ Estadísticas con locomotoras por tipo y vagones por tipo
+- ✅ Valor total incluye locomotoras + vagones
 
 ### Frontend (React + Tailwind + Shadcn UI)
-- ✅ Dashboard con estadísticas (total locomotoras, decodificadores, proyectos sonido, valor total)
-- ✅ Distribución por marca y compañía ferroviaria
-- ✅ Lista de locomotoras con tabla densa y filtros (búsqueda, marca, estado)
-- ✅ Formulario de locomotora completo con:
-  - Información básica (marca, modelo, referencia)
-  - Información técnica DCC (dirección, decodificador, proyecto sonido)
-  - Información de compra (fecha, precio, estado, época, compañía)
-  - Gestión de funciones F0-F28
-  - Gestión de modificaciones CV
-  - Subida de foto
-  - Notas
-- ✅ Vista detallada de locomotora
-- ✅ Lista de decodificadores en tarjetas con especificaciones
-- ✅ Formulario de decodificador (marca, modelo, tipo, escala, interfaz, funciones, capacidad sonido)
-- ✅ Lista de proyectos de sonido
-- ✅ Formulario de proyecto de sonido con selección de sonidos comunes
-- ✅ Navegación completa con iconos
-- ✅ Tema claro estilo "Collector's Studio"
-- ✅ Fuentes: Oswald (headings), Public Sans (body), JetBrains Mono (data)
-- ✅ Confirmación de eliminación con AlertDialog
+- ✅ Dashboard con 4 estadísticas: locomotoras, vagones/coches, decodificadores, valor total
+- ✅ Navegación completa con 5 secciones
+- ✅ Lista locomotoras con campo "Tipo de Locomotora"
+- ✅ Formulario locomotora con selector de tipo (eléctrica, diesel, vapor, automotor, alta velocidad)
+- ✅ **Nueva sección Vagones y Coches**:
+  - Lista con filtros por tipo y estado
+  - Formulario sin campos digitales (sin DCC, decodificador, funciones, CVs)
+  - Vista detallada
+- ✅ Gestión completa de decodificadores
+- ✅ Gestión completa de proyectos de sonido
+- ✅ Tema claro "Collector's Studio"
 
-## Testing Status
-- Backend: 100% tests passed
-- Frontend: 100% workflows tested
-- Integration: Verified working
+## Testing Status - 11/02/2026
+- Backend: 93.8% tests passed
+- Frontend: 95% functional
+- All CRUD operations working
 
 ## Prioritized Backlog
 
 ### P0 - Done
-- [x] CRUD Locomotoras
+- [x] CRUD Locomotoras con tipo
+- [x] CRUD Vagones/Coches (rolling-stock)
 - [x] CRUD Decodificadores
 - [x] CRUD Proyectos Sonido
 - [x] Dashboard con estadísticas
-- [x] Subida de fotos
 
 ### P1 - Next Features
 - [ ] Exportar catálogo a PDF
 - [ ] Lista de deseos para modelos futuros
-- [ ] Búsqueda avanzada con múltiples filtros
-- [ ] Ordenación por columnas en tablas
+- [ ] Ordenación por columnas
 
 ### P2 - Nice to Have
-- [ ] Importar/Exportar colección en JSON/CSV
-- [ ] Modo offline con sincronización
-- [ ] Gráficos de valor de colección en el tiempo
-- [ ] Duplicar locomotora existente
+- [ ] Importar/Exportar en JSON/CSV
+- [ ] Gráficos de valor en el tiempo
+- [ ] Duplicar elementos existentes
 
 ## Next Tasks
-1. Implementar exportación a PDF del catálogo
-2. Añadir lista de deseos para modelos pendientes
-3. Mejorar filtros con fechas y rangos de precio
+1. Exportación a PDF del catálogo completo
+2. Lista de deseos para futuros modelos
+3. Mejoras en filtros y ordenación
