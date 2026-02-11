@@ -141,7 +141,7 @@ class RailwayAPITester:
             "notes": "Test locomotive with electric type and prototipo fields"
         }
         
-        success, response = self.run_test("Create Locomotive with Type", "POST", "locomotives", 200, locomotive_data)
+        success, response = self.run_test("Create Locomotive with Type and Prototipo", "POST", "locomotives", 200, locomotive_data)
         if not success:
             return False
         
@@ -152,12 +152,33 @@ class RailwayAPITester:
         
         print(f"   Created locomotive ID: {locomotive_id}")
         
-        # Test GET single locomotive
+        # Test GET single locomotive and verify Prototipo fields
         success, locomotive = self.run_test("Get Single Locomotive", "GET", f"locomotives/{locomotive_id}")
         if success:
             print(f"   Locomotive Type: {locomotive.get('locomotive_type', 'NOT SET')}")
+            print(f"   Paint Scheme: {locomotive.get('paint_scheme', 'NOT SET')}")
+            print(f"   Registration Number: {locomotive.get('registration_number', 'NOT SET')}")
+            print(f"   Prototype Type: {locomotive.get('prototype_type', 'NOT SET')}")
+            
             if locomotive.get('locomotive_type') != 'electrica':
                 print(f"   ⚠️  Wrong locomotive type: expected 'electrica', got '{locomotive.get('locomotive_type')}'")
+            
+            # Verify Prototipo fields
+            expected_prototipo = {
+                'paint_scheme': 'Azul/Amarillo RENFE Test',
+                'registration_number': 'TEST-001-2',
+                'prototype_type': 'Locomotora Universal Test'
+            }
+            
+            prototipo_success = True
+            for field, expected_value in expected_prototipo.items():
+                actual_value = locomotive.get(field)
+                if actual_value != expected_value:
+                    print(f"   ⚠️  Wrong {field}: expected '{expected_value}', got '{actual_value}'")
+                    prototipo_success = False
+            
+            if prototipo_success:
+                print("   ✅ All Prototipo fields correctly saved")
         
         # Test updating locomotive with different type
         update_data = locomotive_data.copy()
