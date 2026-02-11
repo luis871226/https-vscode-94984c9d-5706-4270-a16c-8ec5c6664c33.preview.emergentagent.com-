@@ -42,6 +42,11 @@ class LocomotiveBase(BaseModel):
     model: str
     reference: str
     locomotive_type: str = "electrica"  # electrica, vapor, diesel, automotor, alta_velocidad, otro
+    # Prototipo fields
+    paint_scheme: Optional[str] = None  # Esquema de pintura
+    registration_number: Optional[str] = None  # Matrícula/Número
+    prototype_type: Optional[str] = None  # Tipo de prototipo
+    # DCC fields
     dcc_address: int
     decoder_brand: Optional[str] = None
     decoder_model: Optional[str] = None
@@ -421,6 +426,67 @@ async def get_stats():
 @api_router.get("/")
 async def root():
     return {"message": "Railway Collection API", "version": "1.0.0"}
+
+# ============== BACKUP/RESTORE ENDPOINTS ==============
+
+class BackupData(BaseModel):
+    version: str = "1.0"
+    created_at: str
+    locomotives: List[dict]
+    rolling_stock: List[dict]
+    decoders: List[dict]
+    sound_projects: List[dict]
+
+@api_router.get("/backup")
+async def create_backup():
+    """Export all data as a backup"""
+    locomotives = await db.locomotives.find({}, {"_id": 0}).to_list(10000)
+    rolling_stock = await db.rolling_stock.find({}, {"_id": 0}).to_list(10000)
+    decoders = await db.decoders.find({}, {"_id": 0}).to_list(10000)
+    sound_projects = await db.sound_projects.find({}, {"_id": 0}).to_list(10000)
+    
+    backup = {
+        "version": "1.0",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "locomotives": locomotives,
+        "rolling_stock": rolling_stock,
+        "decoders": decoders,
+        "sound_projects": sound_projects
+    }
+    
+    return backup
+
+@api_router.post("/restore")
+async def restore_backup(backup: BackupData):
+    """Restore data from a backup (replaces all existing data)"""
+    try:
+        # Clear existing collections
+        await db.locomotives.delete_many({})
+        await db.rolling_stock.delete_many({})
+        await db.decoders.delete_many({})
+        await db.sound_projects.delete_many({})
+        
+        # Restore data
+        if backup.locomotives:
+            await db.locomotives.insert_many(backup.locomotives)
+        if backup.rolling_stock:
+            await db.rolling_stock.insert_many(backup.rolling_stock)
+        if backup.decoders:
+            await db.decoders.insert_many(backup.decoders)
+        if backup.sound_projects:
+            await db.sound_projects.insert_many(backup.sound_projects)
+        
+        return {
+            "message": "Backup restaurado correctamente",
+            "restored": {
+                "locomotives": len(backup.locomotives),
+                "rolling_stock": len(backup.rolling_stock),
+                "decoders": len(backup.decoders),
+                "sound_projects": len(backup.sound_projects)
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al restaurar backup: {str(e)}")
 
 # Include the router in the main app
 app.include_router(api_router)
