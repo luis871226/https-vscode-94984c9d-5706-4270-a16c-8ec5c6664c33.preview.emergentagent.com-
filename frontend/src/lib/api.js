@@ -71,6 +71,7 @@ export const getComposition = (id) => api.get(`/compositions/${id}`);
 export const createComposition = (data) => api.post('/compositions', data);
 export const updateComposition = (id, data) => api.put(`/compositions/${id}`, data);
 export const deleteComposition = (id) => api.delete(`/compositions/${id}`);
+export const duplicateComposition = (id) => api.post(`/compositions/${id}/duplicate`);
 
 // CSV Import
 export const importLocomotivesCSV = (csvContent) => axios.post(`${API}/import/csv/locomotives`, csvContent, {

@@ -1330,6 +1330,35 @@ async def delete_composition(composition_id: str):
         raise HTTPException(status_code=404, detail="Composición no encontrada")
     return {"message": "Composición eliminada"}
 
+@api_router.post("/compositions/{composition_id}/duplicate")
+async def duplicate_composition(composition_id: str):
+    """Duplicate an existing composition with a new name"""
+    original = await db.compositions.find_one({"id": composition_id}, {"_id": 0})
+    if not original:
+        raise HTTPException(status_code=404, detail="Composición no encontrada")
+    
+    # Create new composition with copied data
+    new_comp = Composition(
+        name=f"{original['name']} (copia)",
+        service_type=original.get('service_type', 'pasajeros'),
+        era=original.get('era'),
+        locomotive_id=original.get('locomotive_id'),
+        wagons=original.get('wagons', []),
+        notes=original.get('notes')
+    )
+    
+    doc = new_comp.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    await db.compositions.insert_one(doc)
+    
+    return {
+        "message": "Composición duplicada",
+        "original_id": composition_id,
+        "new_id": new_comp.id,
+        "new_name": new_comp.name
+    }
+
 # ============== CSV IMPORT ENDPOINTS ==============
 import csv
 from io import StringIO
