@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Train, Plus, Search, Filter, Trash2, Edit, Eye } from "lucide-react";
 import { getLocomotives, deleteLocomotive } from "../lib/api";
@@ -22,22 +22,23 @@ import {
   AlertDialogTitle,
 } from "../components/ui/alert-dialog";
 import { toast } from "sonner";
+import SortableHeader from "../components/SortableHeader";
 
 const Locomotives = () => {
   const navigate = useNavigate();
   const [locomotives, setLocomotives] = useState([]);
-  const [filteredLocomotives, setFilteredLocomotives] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterBrand, setFilterBrand] = useState("all");
   const [filterCondition, setFilterCondition] = useState("all");
   const [deleteId, setDeleteId] = useState(null);
+  const [sortKey, setSortKey] = useState("brand");
+  const [sortDirection, setSortDirection] = useState("asc");
 
   const fetchLocomotives = async () => {
     try {
       const response = await getLocomotives();
       setLocomotives(response.data);
-      setFilteredLocomotives(response.data);
     } catch (error) {
       console.error("Error fetching locomotives:", error);
       toast.error("Error al cargar las locomotoras");
@@ -50,7 +51,12 @@ const Locomotives = () => {
     fetchLocomotives();
   }, []);
 
-  useEffect(() => {
+  const handleSort = (key, direction) => {
+    setSortKey(key);
+    setSortDirection(direction);
+  };
+
+  const filteredLocomotives = useMemo(() => {
     let filtered = [...locomotives];
 
     // Search filter
@@ -75,8 +81,27 @@ const Locomotives = () => {
       filtered = filtered.filter((loco) => loco.condition === filterCondition);
     }
 
-    setFilteredLocomotives(filtered);
-  }, [searchTerm, filterBrand, filterCondition, locomotives]);
+    // Sort
+    filtered.sort((a, b) => {
+      let aVal = a[sortKey];
+      let bVal = b[sortKey];
+      
+      // Handle numeric fields
+      if (sortKey === "price" || sortKey === "dcc_address") {
+        aVal = aVal || 0;
+        bVal = bVal || 0;
+      } else {
+        aVal = (aVal || "").toString().toLowerCase();
+        bVal = (bVal || "").toString().toLowerCase();
+      }
+
+      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [locomotives, searchTerm, filterBrand, filterCondition, sortKey, sortDirection]);
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -185,13 +210,27 @@ const Locomotives = () => {
             <thead>
               <tr>
                 <th className="text-left">Foto</th>
-                <th className="text-left">Marca / Modelo</th>
-                <th className="text-left">Referencia</th>
-                <th className="text-center">Dir. DCC</th>
-                <th className="text-left">Decodificador</th>
-                <th className="text-left">Compañía</th>
-                <th className="text-left">Estado</th>
-                <th className="text-right">Precio</th>
+                <th className="text-left">
+                  <SortableHeader label="Marca / Modelo" sortKey="brand" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                </th>
+                <th className="text-left">
+                  <SortableHeader label="Referencia" sortKey="reference" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                </th>
+                <th className="text-center">
+                  <SortableHeader label="Dir. DCC" sortKey="dcc_address" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} className="justify-center" />
+                </th>
+                <th className="text-left">
+                  <SortableHeader label="Decodificador" sortKey="decoder_brand" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                </th>
+                <th className="text-left">
+                  <SortableHeader label="Compañía" sortKey="railway_company" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                </th>
+                <th className="text-left">
+                  <SortableHeader label="Estado" sortKey="condition" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                </th>
+                <th className="text-right">
+                  <SortableHeader label="Precio" sortKey="price" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} className="justify-end" />
+                </th>
                 <th className="text-center">Acciones</th>
               </tr>
             </thead>
