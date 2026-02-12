@@ -571,8 +571,12 @@ def parse_jmri_xml(xml_content: str) -> dict:
             return None
         
         # Extract basic info from locomotive attributes
+        # CORRECTED MAPPING:
+        # - XML 'model' attribute (e.g., "HN2351") -> app 'reference' field
+        # - XML 'roadName' attribute (e.g., "Ferrobus.591.500") -> app 'model' field
         mfg = loco_elem.get('mfg', '')
-        road_name = loco_elem.get('roadName', '')
+        xml_model = loco_elem.get('model', '')  # This is the reference (e.g., HN2351)
+        road_name = loco_elem.get('roadName', '')  # This is the model name (e.g., Ferrobus.591.500)
         road_number = loco_elem.get('roadNumber', '')
         dcc_address = loco_elem.get('dccAddress', '3')
         comment = loco_elem.get('comment', '')
@@ -581,21 +585,23 @@ def parse_jmri_xml(xml_content: str) -> dict:
         decoder_elem = loco_elem.find('decoder')
         decoder_brand = ''
         decoder_model = ''
+        decoder_family = ''
         if decoder_elem is not None:
             decoder_family = decoder_elem.get('family', '')
             decoder_model = decoder_elem.get('model', '')
-            # Extract brand from family (e.g., "ESU LokPilot V4.0" -> "ESU")
+            # Extract brand from family (e.g., "ESU LokSound 5 DCC" -> "ESU")
             if decoder_family:
                 parts = decoder_family.split(' ')
                 if parts:
                     decoder_brand = parts[0]
         
-        # Extract Project Loco Name and Type from varValue
+        # Extract Project Loco Name from varValue items
+        # Look in decoderDef section for varValue items
         project_name = ''
         project_type = ''
-        values_elem = loco_elem.find('.//decoderDef')
-        if values_elem is not None:
-            for var in values_elem.findall('varValue'):
+        decoder_def = loco_elem.find('.//decoderDef')
+        if decoder_def is not None:
+            for var in decoder_def.findall('varValue'):
                 item = var.get('item', '')
                 value = var.get('value', '')
                 if item == 'Project Loco Name':
@@ -603,10 +609,65 @@ def parse_jmri_xml(xml_content: str) -> dict:
                 elif item == 'Project Loco Type':
                     project_type = value
         
+        # Also check in values section (after decoderDef closes)
+        # The Project Loco Name might be stored as ASCII values in CVs 1.0.261-1.0.288
+        values_elem = loco_elem.find('values')
+        if values_elem is not None and not project_name:
+            # Try to extract project name from CV values (1.0.261-1.0.288 are ASCII chars)
+            project_chars = []
+            for cv_elem in values_elem.findall('CVvalue'):
+                cv_name = cv_elem.get('name', '')
+                cv_value = cv_elem.get('value', '')
+                if cv_name.startswith('1.0.') and cv_value.isdigit():
+                    cv_index = cv_name.split('.')[-1]
+                    if cv_index.isdigit():
+                        idx = int(cv_index)
+                        if 261 <= idx <= 288:
+                            char_val = int(cv_value)
+                            if char_val > 0:
+                                project_chars.append((idx, chr(char_val)))
+            if project_chars:
+                project_chars.sort(key=lambda x: x[0])
+                project_name = ''.join([c[1] for c in project_chars]).strip()
+        
+        # Extract function labels from functionlabels element
+        functions = []
+        func_labels = loco_elem.find('functionlabels')
+        if func_labels is not None:
+            for func_label in func_labels.findall('functionlabel'):
+                num = func_label.get('num', '')
+                lockable = func_label.get('lockable', 'false')
+                label_text = func_label.text or ''
+                if num and label_text:
+                    functions.append({
+                        'function_number': f'F{num}',
+                        'description': label_text,
+                        'is_sound': False  # Will be updated based on soundlabel
+                    })
+        
+        # Extract sound labels from soundlabels element
+        sound_labels = loco_elem.find('soundlabels')
+        if sound_labels is not None:
+            for sound_label in sound_labels.findall('soundlabel'):
+                num = sound_label.get('num', '')
+                label_text = sound_label.text or ''
+                if num and label_text:
+                    # Mark corresponding function as sound
+                    for func in functions:
+                        if func['function_number'] == f'F{num}':
+                            func['is_sound'] = True
+                            break
+                    else:
+                        # Add as new function if not found
+                        functions.append({
+                            'function_number': f'F{num}',
+                            'description': label_text,
+                            'is_sound': True
+                        })
+        
         # Extract CV values
         cv_modifications = []
-        cv_values_elem = loco_elem.find('values')
-        if cv_values_elem is not None:
+        if values_elem is not None:
             # Get important CVs only (not all the ESU function mapping)
             important_cvs = {
                 '1': 'Dirección corta',
@@ -619,7 +680,7 @@ def parse_jmri_xml(xml_content: str) -> dict:
                 '17': 'Dirección larga (alta)',
                 '18': 'Dirección larga (baja)',
             }
-            for cv_elem in cv_values_elem.findall('CVvalue'):
+            for cv_elem in values_elem.findall('CVvalue'):
                 cv_name = cv_elem.get('name', '')
                 cv_value = cv_elem.get('value', '')
                 # Only include simple CVs (not indexed ones like 16.2.xxx)
@@ -640,27 +701,36 @@ def parse_jmri_xml(xml_content: str) -> dict:
             loco_type = 'electrica'
         elif any(x in name_lower for x in ['vapor', 'steam', '141', '240', '030']):
             loco_type = 'vapor'
-        elif any(x in name_lower for x in ['automotor', 'dmu', 'emu', '592', '594', '596']):
+        elif any(x in name_lower for x in ['automotor', 'dmu', 'emu', '592', '594', '596', 'ferrobus']):
             loco_type = 'automotor'
         elif any(x in name_lower for x in ['ave', 's-100', 's-102', 's-103', 'talgo', 'alta velocidad']):
             loco_type = 'alta_velocidad'
         
+        # Build sound project name from decoder info and project name
+        sound_project = ''
+        if decoder_brand and project_name:
+            sound_project = f"{decoder_brand} - {project_name}"
+        elif project_name:
+            sound_project = project_name
+        elif decoder_family:
+            sound_project = decoder_family
+        
         return {
             'brand': mfg,
-            'model': road_name or project_name,
-            'reference': '',  # Not available in JMRI
+            'model': road_name or project_name,  # roadName goes to model
+            'reference': xml_model,  # XML model attribute goes to reference
             'locomotive_type': loco_type,
             'paint_scheme': '',
             'registration_number': road_number,
-            'prototype_type': project_name,
+            'prototype_type': project_name or project_type,
             'dcc_address': int(dcc_address) if dcc_address.isdigit() else 3,
             'decoder_brand': decoder_brand,
             'decoder_model': decoder_model,
-            'sound_project': project_name if decoder_brand else '',
+            'sound_project': sound_project,
             'notes': comment,
             'cv_modifications': cv_modifications,
             'condition': 'nuevo',
-            'functions': [],
+            'functions': functions,
         }
     except ET.ParseError as e:
         raise ValueError(f"Error parsing XML: {str(e)}")
