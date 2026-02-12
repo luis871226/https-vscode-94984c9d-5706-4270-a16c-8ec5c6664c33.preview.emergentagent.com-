@@ -1333,9 +1333,10 @@ async def delete_composition(composition_id: str):
 # ============== CSV IMPORT ENDPOINTS ==============
 import csv
 from io import StringIO
+from fastapi import Body
 
 @api_router.post("/import/csv/locomotives", response_model=CSVImportResult)
-async def import_locomotives_csv(csv_content: str):
+async def import_locomotives_csv(csv_content: str = Body(..., media_type="text/plain")):
     """
     Import locomotives from CSV content.
     Expected columns: brand,model,reference,locomotive_type,dcc_address,decoder_brand,decoder_model,
@@ -1415,7 +1416,7 @@ async def import_locomotives_csv(csv_content: str):
     )
 
 @api_router.post("/import/csv/rolling-stock", response_model=CSVImportResult)
-async def import_rolling_stock_csv(csv_content: str):
+async def import_rolling_stock_csv(csv_content: str = Body(..., media_type="text/plain")):
     """
     Import rolling stock from CSV content.
     Expected columns: brand,model,reference,stock_type,condition,era,railway_company,purchase_date,price,notes
