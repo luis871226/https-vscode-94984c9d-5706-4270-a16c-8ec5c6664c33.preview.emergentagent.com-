@@ -432,6 +432,7 @@ async def get_stats():
     rolling_stock = await db.rolling_stock.find({}, {"_id": 0}).to_list(1000)
     decoders = await db.decoders.find({}, {"_id": 0}).to_list(1000)
     sound_projects = await db.sound_projects.find({}, {"_id": 0}).to_list(1000)
+    compositions = await db.compositions.find({}, {"_id": 0}).to_list(1000)
     
     total_value = sum(loco.get('price', 0) or 0 for loco in locomotives)
     total_value += sum(stock.get('price', 0) or 0 for stock in rolling_stock)
@@ -475,6 +476,7 @@ async def get_stats():
         total_decoders=len(decoders),
         total_sound_projects=len(sound_projects),
         total_wishlist=len(wishlist),
+        total_compositions=len(compositions),
         total_value=total_value,
         wishlist_value=wishlist_value,
         locomotives_by_brand=by_brand,
