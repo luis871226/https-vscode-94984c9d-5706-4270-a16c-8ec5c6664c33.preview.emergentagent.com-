@@ -65,6 +65,19 @@ export const exportCatalogPDF = () => `${API}/export/catalog/pdf`;
 export const exportLocomotivePDF = (id) => `${API}/export/locomotive/${id}/pdf`;
 export const exportRollingStockPDF = (id) => `${API}/export/rolling-stock/${id}/pdf`;
 
+// Compositions
+export const getCompositions = () => api.get('/compositions');
+export const getComposition = (id) => api.get(`/compositions/${id}`);
+export const createComposition = (data) => api.post('/compositions', data);
+export const updateComposition = (id, data) => api.put(`/compositions/${id}`, data);
+export const deleteComposition = (id) => api.delete(`/compositions/${id}`);
+
+// CSV Import
+export const importLocomotivesCSV = (csvContent) => api.post('/import/csv/locomotives', csvContent);
+export const importRollingStockCSV = (csvContent) => api.post('/import/csv/rolling-stock', csvContent);
+export const getLocomotivesCSVTemplate = () => `${API}/import/csv/template/locomotives`;
+export const getRollingStockCSVTemplate = () => `${API}/import/csv/template/rolling-stock`;
+
 // Statistics
 export const getStats = () => api.get('/stats');
 
