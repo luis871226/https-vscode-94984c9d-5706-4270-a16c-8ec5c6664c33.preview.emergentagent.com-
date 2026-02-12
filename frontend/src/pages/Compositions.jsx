@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getCompositions, deleteComposition } from '../lib/api';
+import { getCompositions, deleteComposition, duplicateComposition } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { useToast } from '../hooks/use-toast';
-import { Plus, Trash2, Edit, Eye, Train, TrainTrack, Layers } from 'lucide-react';
+import { Plus, Trash2, Edit, Eye, Train, TrainTrack, Layers, Copy } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,6 +49,19 @@ export default function Compositions() {
       toast({ title: 'Error', description: 'Error al eliminar', variant: 'destructive' });
     } finally {
       setDeleteId(null);
+    }
+  };
+
+  const handleDuplicate = async (id, name) => {
+    try {
+      const response = await duplicateComposition(id);
+      toast({ 
+        title: 'Duplicada', 
+        description: `Se ha creado "${response.data.new_name}"` 
+      });
+      loadCompositions();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Error al duplicar', variant: 'destructive' });
     }
   };
 
@@ -141,6 +154,16 @@ export default function Compositions() {
                     data-testid={`view-composition-${comp.id}`}
                   >
                     <Eye className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDuplicate(comp.id, comp.name)}
+                    className="text-purple-600 hover:text-purple-700"
+                    data-testid={`duplicate-composition-${comp.id}`}
+                    title="Duplicar composición"
+                  >
+                    <Copy className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="outline"
