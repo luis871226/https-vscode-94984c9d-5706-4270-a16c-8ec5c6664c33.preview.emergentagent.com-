@@ -26,53 +26,45 @@ Aplicación para PC para gestionar una colección de modelismo ferroviario (Esca
 
 6. **Importación JMRI**: Importar locomotoras desde archivos XML de JMRI
 
+7. **Lista de Deseos**: Gestión de items deseados con prioridad, precio estimado y tienda
+
+8. **Exportación PDF**: Catálogo completo y fichas individuales de locomotoras/vagones
+
 ## What's Been Implemented
 
-### 11/02/2026 - Implementación JMRI Import
-- ✅ **Backend endpoint** POST /api/import/jmri - Parsea archivos XML de JMRI
-- ✅ **Frontend página** /jmri-import - Interfaz para subir archivos XML
-- ✅ **Integración en Backup** - Tarjeta de acceso a importación JMRI
-- ✅ Extracción de datos: marca (mfg), modelo (roadName), matrícula (roadNumber), dirección DCC, decodificador, CVs
-- ✅ Detección automática de tipo de locomotora (eléctrica, diesel, vapor, etc.)
-- ✅ Soporte para múltiples archivos XML a la vez
-- ✅ Registro de importaciones en historial de backup
+### 12/02/2026 - Nuevas Funcionalidades P1
+- ✅ **Ordenamiento de Tablas**: Cabeceras clicables en Locomotoras, Vagones y Lista de Deseos
+- ✅ **Exportar Catálogo PDF**: Botón en Dashboard genera PDF completo con locomotoras, vagones y resumen
+- ✅ **Exportar Locomotora PDF**: Ficha individual con toda la información técnica y DCC
+- ✅ **Exportar Vagón PDF**: Ficha individual de material rodante
+- ✅ **Lista de Deseos Completa**: CRUD + mover a colección + ordenamiento por columnas
+
+### 11/02/2026 - JMRI Import & Bug Fixes
+- ✅ **Corrección Bug JMRI**: Mapeo correcto model→reference, roadName→model
+- ✅ **Funciones JMRI**: Extracción de functionlabels, soundlabels y Project Loco Name
 
 ### Backend (FastAPI + MongoDB)
-- ✅ CRUD Locomotoras con campos Prototipo (paint_scheme, registration_number, prototype_type)
-- ✅ CRUD Vagones/Coches (rolling-stock)
+- ✅ CRUD Locomotoras con campos Prototipo
+- ✅ CRUD Vagones/Coches
 - ✅ CRUD Decodificadores
 - ✅ CRUD Proyectos de sonido
-- ✅ **Backup endpoint** GET /api/backup - Exporta toda la BD
-- ✅ **Restore endpoint** POST /api/restore - Restaura desde backup
-- ✅ **JMRI Import endpoint** POST /api/import/jmri - Importa desde XML
-- ✅ Estadísticas completas
-- ✅ Historial de backups
-- ✅ Configuración de recordatorios de backup
+- ✅ CRUD Lista de Deseos + mover a colección
+- ✅ Backup/Restore endpoints
+- ✅ JMRI Import endpoint
+- ✅ PDF Export endpoints (catálogo, locomotoras, vagones)
+- ✅ Estadísticas completas incluyendo wishlist
 
 ### Frontend (React + Tailwind + Shadcn UI)
-- ✅ Dashboard con estadísticas
-- ✅ Formulario locomotoras con **sección Prototipo**
-- ✅ Vista detallada locomotoras muestra prototipo
-- ✅ Sección Vagones/Coches completa
-- ✅ Gestión de decodificadores
-- ✅ Gestión de proyectos de sonido
-- ✅ **Página Backup/Restore** con descarga, restauración e importación JMRI
-- ✅ **Página JMRI Import** con upload de archivos XML
-- ✅ Navegación con 6 secciones
+- ✅ Dashboard con estadísticas y botón exportar catálogo PDF
+- ✅ Tablas ordenables en Locomotoras, Vagones y Wishlist (SortableHeader component)
+- ✅ Vista detallada con exportar PDF individual
+- ✅ Página Lista de Deseos con ordenamiento, edición y mover a colección
+- ✅ Formulario de wishlist con todos los campos
 
-## Testing Status - 11/02/2026
-- Backend JMRI Import: 100% (11/11 pytest tests passed)
-- Frontend JMRI Import: 100% (all UI elements and flows working)
-- Backup/Restore: Working
-- Test file: /app/backend/tests/test_jmri_import.py
-
-### 12/02/2026 - Corrección Bug Mapeo JMRI
-- ✅ **Bug corregido**: El atributo `model` del XML ahora mapea a `reference` (ej: HN2351)
-- ✅ **Bug corregido**: El atributo `roadName` del XML ahora mapea a `model` (ej: Ferrobus.591.500)
-- ✅ **Nueva funcionalidad**: Extracción de `functionlabels` y `soundlabels` del XML
-- ✅ **Nueva funcionalidad**: Extracción del `Project Loco Name` desde `decoderDef` y CVs 1.0.261-288
-- ✅ **Mejora**: Detección de locomotora tipo "automotor" incluyendo "ferrobus"
-- ✅ **Mejora**: Sound project ahora incluye marca del decoder (ej: "ESU - Renfe 591")
+## Testing Status - 12/02/2026
+- Backend: 100% (14/14 pytest tests)
+- Frontend: 100% (sorting, PDF, wishlist flows)
+- Test file: /app/backend/tests/test_new_features.py
 
 ## Prioritized Backlog
 
@@ -81,18 +73,18 @@ Aplicación para PC para gestionar una colección de modelismo ferroviario (Esca
 - [x] Campos Prototipo en locomotoras
 - [x] Sistema Backup/Restore
 - [x] Dashboard con estadísticas
-- [x] **Importación desde JMRI XML**
-- [x] **Corrección mapeo JMRI (model→reference, roadName→model)**
+- [x] Importación desde JMRI XML
+- [x] Exportar catálogo a PDF
+- [x] Lista de deseos
+- [x] Ordenación de columnas
 
 ### P1 - Next Features
-- [ ] Exportar catálogo a PDF
-- [ ] Lista de deseos
-- [ ] Ordenación de columnas
-
-### P2 - Nice to Have
 - [ ] Composiciones de trenes (locomotora + vagones)
 - [ ] Importar desde CSV
+
+### P2 - Nice to Have
 - [ ] Historial de precios
+- [ ] Estadísticas avanzadas (gráficos)
 
 ## Code Architecture
 ```
@@ -100,29 +92,25 @@ Aplicación para PC para gestionar una colección de modelismo ferroviario (Esca
 ├── backend/
 │   ├── server.py          # FastAPI app con todos los endpoints
 │   ├── tests/
-│   │   └── test_jmri_import.py  # Tests de importación JMRI
+│   │   ├── test_jmri_import.py
+│   │   └── test_new_features.py  # Tests de sorting, PDF, wishlist
 │   └── .env
 ├── frontend/
 │   └── src/
 │       ├── lib/
-│       │   └── api.js     # Servicios API incluyendo importJMRI
+│       │   └── api.js     # Servicios API
 │       ├── components/
-│       │   ├── Layout.jsx # Navegación principal
-│       │   └── ui/        # Componentes Shadcn
+│       │   ├── Layout.jsx
+│       │   ├── SortableHeader.jsx  # Cabeceras ordenables
+│       │   └── ui/
 │       └── pages/
-│           ├── Dashboard.jsx
-│           ├── Locomotives.jsx
-│           ├── LocomotiveForm.jsx
-│           ├── LocomotiveDetail.jsx
-│           ├── RollingStock.jsx
-│           ├── RollingStockForm.jsx
-│           ├── RollingStockDetail.jsx
-│           ├── Decoders.jsx
-│           ├── DecoderForm.jsx
-│           ├── SoundProjects.jsx
-│           ├── SoundProjectForm.jsx
-│           ├── BackupRestore.jsx  # Incluye enlace a JMRI Import
-│           └── JMRIImport.jsx     # Página de importación JMRI
+│           ├── Dashboard.jsx       # + Exportar catálogo PDF
+│           ├── Locomotives.jsx     # + Ordenamiento
+│           ├── LocomotiveDetail.jsx # + Exportar PDF
+│           ├── RollingStock.jsx    # + Ordenamiento
+│           ├── Wishlist.jsx        # CRUD + ordenamiento
+│           ├── WishlistForm.jsx
+│           └── ...
 └── memory/
     └── PRD.md
 ```
@@ -136,12 +124,17 @@ Aplicación para PC para gestionar una colección de modelismo ferroviario (Esca
 - `GET, PUT, DELETE /api/decoders/{id}`
 - `GET, POST /api/sound-projects`
 - `GET, PUT, DELETE /api/sound-projects/{id}`
-- `GET /api/backup` - Exportar todo
-- `POST /api/restore` - Restaurar desde JSON
-- `GET /api/backup/history` - Historial de backups
-- `POST /api/import/jmri` - Importar desde JMRI XML
-- `GET /api/stats` - Estadísticas
+- `GET, POST /api/wishlist`
+- `GET, PUT, DELETE /api/wishlist/{id}`
+- `POST /api/wishlist/{id}/move-to-collection`
+- `GET /api/export/catalog/pdf`
+- `GET /api/export/locomotive/{id}/pdf`
+- `GET /api/export/rolling-stock/{id}/pdf`
+- `GET /api/backup`
+- `POST /api/restore`
+- `POST /api/import/jmri`
+- `GET /api/stats`
 
 ## Next Tasks
-1. Exportación a PDF del catálogo
-2. Lista de deseos para modelos pendientes
+1. Composiciones de trenes (locomotora + vagones asociados)
+2. Importar colección desde CSV
