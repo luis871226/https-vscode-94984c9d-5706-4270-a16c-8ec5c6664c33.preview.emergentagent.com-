@@ -49,6 +49,22 @@ export const saveBackupSettings = (data) => api.post('/backup/settings', data);
 // JMRI Import
 export const importJMRI = (filesContent) => api.post('/import/jmri', filesContent);
 
+// Wishlist
+export const getWishlist = () => api.get('/wishlist');
+export const getWishlistItem = (id) => api.get(`/wishlist/${id}`);
+export const createWishlistItem = (data) => api.post('/wishlist', data);
+export const updateWishlistItem = (id, data) => api.put(`/wishlist/${id}`, data);
+export const deleteWishlistItem = (id) => api.delete(`/wishlist/${id}`);
+export const moveWishlistToCollection = (id, purchaseDate, price) => 
+  api.post(`/wishlist/${id}/move-to-collection`, null, { 
+    params: { purchase_date: purchaseDate, price: price }
+  });
+
+// PDF Export
+export const exportCatalogPDF = () => `${API}/export/catalog/pdf`;
+export const exportLocomotivePDF = (id) => `${API}/export/locomotive/${id}/pdf`;
+export const exportRollingStockPDF = (id) => `${API}/export/rolling-stock/${id}/pdf`;
+
 // Statistics
 export const getStats = () => api.get('/stats');
 
