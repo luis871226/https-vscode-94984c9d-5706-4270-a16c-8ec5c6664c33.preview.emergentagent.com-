@@ -230,7 +230,7 @@ const BackupRestore = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Actions */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Backup Section */}
             <div className="bg-white border border-slate-200 p-6">
               <div className="flex items-center gap-4 mb-4">
@@ -305,6 +305,37 @@ const BackupRestore = () => {
                   data-testid="restore-file-input"
                 />
               </label>
+            </div>
+
+            {/* JMRI Import Section */}
+            <div className="bg-white border border-slate-200 p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-orange-50 flex items-center justify-center">
+                  <FileUp className="w-6 h-6 text-orange-600" />
+                </div>
+                <div>
+                  <h2 className="font-heading text-lg font-semibold uppercase tracking-tight text-slate-800">
+                    Importar JMRI
+                  </h2>
+                  <p className="font-mono text-xs text-slate-500 uppercase">
+                    Desde archivo XML
+                  </p>
+                </div>
+              </div>
+              
+              <p className="font-body text-sm text-slate-600 mb-4">
+                Importa tus locomotoras desde archivos XML de JMRI.
+              </p>
+              
+              <Link to="/jmri-import">
+                <Button
+                  className="w-full bg-orange-600 hover:bg-orange-700 font-mono uppercase tracking-widest text-xs gap-2"
+                  data-testid="jmri-import-btn"
+                >
+                  <FileUp className="w-4 h-4" />
+                  Ir a Importar JMRI
+                </Button>
+              </Link>
             </div>
           </div>
 
