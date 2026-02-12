@@ -46,6 +46,9 @@ export const clearBackupHistory = () => api.delete('/backup/history');
 export const getBackupSettings = () => api.get('/backup/settings');
 export const saveBackupSettings = (data) => api.post('/backup/settings', data);
 
+// JMRI Import
+export const importJMRI = (filesContent) => api.post('/import/jmri', filesContent);
+
 // Statistics
 export const getStats = () => api.get('/stats');
 
