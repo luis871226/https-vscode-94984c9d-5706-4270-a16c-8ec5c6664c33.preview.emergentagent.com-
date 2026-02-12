@@ -82,6 +82,16 @@ const LocomotiveDetail = () => {
           </div>
         </div>
         <div className="flex gap-2">
+          <a href={exportLocomotivePDF(id)} target="_blank" rel="noopener noreferrer">
+            <Button
+              variant="outline"
+              className="font-mono uppercase tracking-widest text-xs gap-2 border-slate-300"
+              data-testid="export-pdf-btn"
+            >
+              <FileDown className="w-4 h-4" />
+              PDF
+            </Button>
+          </a>
           <Link to={`/locomotives/${id}/edit`}>
             <Button
               variant="outline"
