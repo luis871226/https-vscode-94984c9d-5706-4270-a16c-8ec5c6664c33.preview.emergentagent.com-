@@ -73,8 +73,12 @@ export const updateComposition = (id, data) => api.put(`/compositions/${id}`, da
 export const deleteComposition = (id) => api.delete(`/compositions/${id}`);
 
 // CSV Import
-export const importLocomotivesCSV = (csvContent) => api.post('/import/csv/locomotives', csvContent);
-export const importRollingStockCSV = (csvContent) => api.post('/import/csv/rolling-stock', csvContent);
+export const importLocomotivesCSV = (csvContent) => axios.post(`${API}/import/csv/locomotives`, csvContent, {
+  headers: { 'Content-Type': 'text/plain' }
+});
+export const importRollingStockCSV = (csvContent) => axios.post(`${API}/import/csv/rolling-stock`, csvContent, {
+  headers: { 'Content-Type': 'text/plain' }
+});
 export const getLocomotivesCSVTemplate = () => `${API}/import/csv/template/locomotives`;
 export const getRollingStockCSVTemplate = () => `${API}/import/csv/template/rolling-stock`;
 
