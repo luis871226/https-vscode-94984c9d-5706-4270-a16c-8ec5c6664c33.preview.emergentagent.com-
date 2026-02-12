@@ -66,6 +66,14 @@ Aplicación para PC para gestionar una colección de modelismo ferroviario (Esca
 - Backup/Restore: Working
 - Test file: /app/backend/tests/test_jmri_import.py
 
+### 12/02/2026 - Corrección Bug Mapeo JMRI
+- ✅ **Bug corregido**: El atributo `model` del XML ahora mapea a `reference` (ej: HN2351)
+- ✅ **Bug corregido**: El atributo `roadName` del XML ahora mapea a `model` (ej: Ferrobus.591.500)
+- ✅ **Nueva funcionalidad**: Extracción de `functionlabels` y `soundlabels` del XML
+- ✅ **Nueva funcionalidad**: Extracción del `Project Loco Name` desde `decoderDef` y CVs 1.0.261-288
+- ✅ **Mejora**: Detección de locomotora tipo "automotor" incluyendo "ferrobus"
+- ✅ **Mejora**: Sound project ahora incluye marca del decoder (ej: "ESU - Renfe 591")
+
 ## Prioritized Backlog
 
 ### P0 - Done
@@ -74,6 +82,7 @@ Aplicación para PC para gestionar una colección de modelismo ferroviario (Esca
 - [x] Sistema Backup/Restore
 - [x] Dashboard con estadísticas
 - [x] **Importación desde JMRI XML**
+- [x] **Corrección mapeo JMRI (model→reference, roadName→model)**
 
 ### P1 - Next Features
 - [ ] Exportar catálogo a PDF
