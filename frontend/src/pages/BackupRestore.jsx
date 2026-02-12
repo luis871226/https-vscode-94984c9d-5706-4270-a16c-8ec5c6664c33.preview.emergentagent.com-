@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Download, Upload, AlertTriangle, CheckCircle, Database, Clock, Settings, Trash2, Bell, BellOff, FileUp } from "lucide-react";
+import { Download, Upload, AlertTriangle, CheckCircle, Database, Clock, Settings, Trash2, Bell, BellOff, FileUp, FileSpreadsheet } from "lucide-react";
 import { createBackup, restoreBackup, getBackupHistory, clearBackupHistory, getBackupSettings, saveBackupSettings } from "../lib/api";
 import { Button } from "../components/ui/button";
 import {
@@ -337,6 +337,37 @@ const BackupRestore = () => {
                 </Button>
               </Link>
             </div>
+          </div>
+
+          {/* Second row - CSV Import */}
+          <div className="bg-white border border-slate-200 p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-teal-50 flex items-center justify-center">
+                <FileSpreadsheet className="w-6 h-6 text-teal-600" />
+              </div>
+              <div>
+                <h2 className="font-heading text-lg font-semibold uppercase tracking-tight text-slate-800">
+                  Importar desde CSV
+                </h2>
+                <p className="font-mono text-xs text-slate-500 uppercase">
+                  Locomotoras y Vagones
+                </p>
+              </div>
+            </div>
+            
+            <p className="font-body text-sm text-slate-600 mb-4">
+              Importa tu colección desde archivos CSV. Descarga plantillas con el formato correcto.
+            </p>
+            
+            <Link to="/csv-import">
+              <Button
+                className="w-full bg-teal-600 hover:bg-teal-700 font-mono uppercase tracking-widest text-xs gap-2"
+                data-testid="csv-import-btn"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                Ir a Importar CSV
+              </Button>
+            </Link>
           </div>
 
           {/* Reminder Settings */}
