@@ -24,7 +24,18 @@ Aplicación para PC para gestionar una colección de modelismo ferroviario (Esca
 
 5. **Backup/Restore**: Guardar y recuperar toda la base de datos en formato JSON
 
-## What's Been Implemented - 11/02/2026
+6. **Importación JMRI**: Importar locomotoras desde archivos XML de JMRI
+
+## What's Been Implemented
+
+### 11/02/2026 - Implementación JMRI Import
+- ✅ **Backend endpoint** POST /api/import/jmri - Parsea archivos XML de JMRI
+- ✅ **Frontend página** /jmri-import - Interfaz para subir archivos XML
+- ✅ **Integración en Backup** - Tarjeta de acceso a importación JMRI
+- ✅ Extracción de datos: marca (mfg), modelo (roadName), matrícula (roadNumber), dirección DCC, decodificador, CVs
+- ✅ Detección automática de tipo de locomotora (eléctrica, diesel, vapor, etc.)
+- ✅ Soporte para múltiples archivos XML a la vez
+- ✅ Registro de importaciones en historial de backup
 
 ### Backend (FastAPI + MongoDB)
 - ✅ CRUD Locomotoras con campos Prototipo (paint_scheme, registration_number, prototype_type)
@@ -33,7 +44,10 @@ Aplicación para PC para gestionar una colección de modelismo ferroviario (Esca
 - ✅ CRUD Proyectos de sonido
 - ✅ **Backup endpoint** GET /api/backup - Exporta toda la BD
 - ✅ **Restore endpoint** POST /api/restore - Restaura desde backup
+- ✅ **JMRI Import endpoint** POST /api/import/jmri - Importa desde XML
 - ✅ Estadísticas completas
+- ✅ Historial de backups
+- ✅ Configuración de recordatorios de backup
 
 ### Frontend (React + Tailwind + Shadcn UI)
 - ✅ Dashboard con estadísticas
@@ -42,13 +56,15 @@ Aplicación para PC para gestionar una colección de modelismo ferroviario (Esca
 - ✅ Sección Vagones/Coches completa
 - ✅ Gestión de decodificadores
 - ✅ Gestión de proyectos de sonido
-- ✅ **Página Backup/Restore** con descarga y restauración
+- ✅ **Página Backup/Restore** con descarga, restauración e importación JMRI
+- ✅ **Página JMRI Import** con upload de archivos XML
 - ✅ Navegación con 6 secciones
 
 ## Testing Status - 11/02/2026
-- Backend: 95% tests passed
-- Frontend: 85% functional (timing issues en tests automatizados)
+- Backend JMRI Import: 100% (11/11 pytest tests passed)
+- Frontend JMRI Import: 100% (all UI elements and flows working)
 - Backup/Restore: Working
+- Test file: /app/backend/tests/test_jmri_import.py
 
 ## Prioritized Backlog
 
@@ -57,6 +73,7 @@ Aplicación para PC para gestionar una colección de modelismo ferroviario (Esca
 - [x] Campos Prototipo en locomotoras
 - [x] Sistema Backup/Restore
 - [x] Dashboard con estadísticas
+- [x] **Importación desde JMRI XML**
 
 ### P1 - Next Features
 - [ ] Exportar catálogo a PDF
@@ -67,6 +84,54 @@ Aplicación para PC para gestionar una colección de modelismo ferroviario (Esca
 - [ ] Composiciones de trenes (locomotora + vagones)
 - [ ] Importar desde CSV
 - [ ] Historial de precios
+
+## Code Architecture
+```
+/app
+├── backend/
+│   ├── server.py          # FastAPI app con todos los endpoints
+│   ├── tests/
+│   │   └── test_jmri_import.py  # Tests de importación JMRI
+│   └── .env
+├── frontend/
+│   └── src/
+│       ├── lib/
+│       │   └── api.js     # Servicios API incluyendo importJMRI
+│       ├── components/
+│       │   ├── Layout.jsx # Navegación principal
+│       │   └── ui/        # Componentes Shadcn
+│       └── pages/
+│           ├── Dashboard.jsx
+│           ├── Locomotives.jsx
+│           ├── LocomotiveForm.jsx
+│           ├── LocomotiveDetail.jsx
+│           ├── RollingStock.jsx
+│           ├── RollingStockForm.jsx
+│           ├── RollingStockDetail.jsx
+│           ├── Decoders.jsx
+│           ├── DecoderForm.jsx
+│           ├── SoundProjects.jsx
+│           ├── SoundProjectForm.jsx
+│           ├── BackupRestore.jsx  # Incluye enlace a JMRI Import
+│           └── JMRIImport.jsx     # Página de importación JMRI
+└── memory/
+    └── PRD.md
+```
+
+## API Endpoints
+- `GET, POST /api/locomotives`
+- `GET, PUT, DELETE /api/locomotives/{id}`
+- `GET, POST /api/rolling-stock`
+- `GET, PUT, DELETE /api/rolling-stock/{id}`
+- `GET, POST /api/decoders`
+- `GET, PUT, DELETE /api/decoders/{id}`
+- `GET, POST /api/sound-projects`
+- `GET, PUT, DELETE /api/sound-projects/{id}`
+- `GET /api/backup` - Exportar todo
+- `POST /api/restore` - Restaurar desde JSON
+- `GET /api/backup/history` - Historial de backups
+- `POST /api/import/jmri` - Importar desde JMRI XML
+- `GET /api/stats` - Estadísticas
 
 ## Next Tasks
 1. Exportación a PDF del catálogo
