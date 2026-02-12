@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { getWishlist, deleteWishlistItem, moveWishlistToCollection } from '../lib/api';
 import { Button } from '../components/ui/button';
@@ -9,7 +9,38 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { useToast } from '../hooks/use-toast';
-import { Plus, Trash2, ShoppingCart, ExternalLink, Edit, Star } from 'lucide-react';
+import { Plus, Trash2, ShoppingCart, ExternalLink, Edit, Star, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+
+function SortableWishlistHeader({ label, sortKey, currentSort, currentDirection, onSort, className = "" }) {
+  const isActive = currentSort === sortKey;
+  
+  const handleClick = () => {
+    if (isActive) {
+      onSort(sortKey, currentDirection === "asc" ? "desc" : "asc");
+    } else {
+      onSort(sortKey, "asc");
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`flex items-center gap-1 hover:text-blue-600 transition-colors group ${className}`}
+      data-testid={`sort-${sortKey}`}
+    >
+      <span>{label}</span>
+      {isActive ? (
+        currentDirection === "asc" ? (
+          <ChevronUp className="w-4 h-4 text-blue-600" />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-blue-600" />
+        )
+      ) : (
+        <ChevronsUpDown className="w-4 h-4 opacity-0 group-hover:opacity-50" />
+      )}
+    </button>
+  );
+}
 
 export default function Wishlist() {
   const [items, setItems] = useState([]);
@@ -17,6 +48,8 @@ export default function Wishlist() {
   const [moveDialog, setMoveDialog] = useState({ open: false, item: null });
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0]);
   const [purchasePrice, setPurchasePrice] = useState('');
+  const [sortKey, setSortKey] = useState('priority');
+  const [sortDirection, setSortDirection] = useState('asc');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -85,6 +118,30 @@ export default function Wishlist() {
     }
   };
 
+  const handleSort = (key, direction) => {
+    setSortKey(key);
+    setSortDirection(direction);
+  };
+
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) => {
+      let aVal = a[sortKey];
+      let bVal = b[sortKey];
+      
+      if (sortKey === "estimated_price" || sortKey === "priority") {
+        aVal = aVal || 0;
+        bVal = bVal || 0;
+      } else {
+        aVal = (aVal || "").toString().toLowerCase();
+        bVal = (bVal || "").toString().toLowerCase();
+      }
+
+      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [items, sortKey, sortDirection]);
+
   const totalValue = items.reduce((sum, item) => sum + (item.estimated_price || 0), 0);
 
   if (loading) {
@@ -128,18 +185,32 @@ export default function Wishlist() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Prioridad</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Marca</TableHead>
-                  <TableHead>Modelo</TableHead>
-                  <TableHead>Referencia</TableHead>
-                  <TableHead>Precio Est.</TableHead>
-                  <TableHead>Tienda</TableHead>
+                  <TableHead>
+                    <SortableWishlistHeader label="Prioridad" sortKey="priority" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                  </TableHead>
+                  <TableHead>
+                    <SortableWishlistHeader label="Tipo" sortKey="item_type" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                  </TableHead>
+                  <TableHead>
+                    <SortableWishlistHeader label="Marca" sortKey="brand" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                  </TableHead>
+                  <TableHead>
+                    <SortableWishlistHeader label="Modelo" sortKey="model" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                  </TableHead>
+                  <TableHead>
+                    <SortableWishlistHeader label="Referencia" sortKey="reference" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                  </TableHead>
+                  <TableHead>
+                    <SortableWishlistHeader label="Precio Est." sortKey="estimated_price" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                  </TableHead>
+                  <TableHead>
+                    <SortableWishlistHeader label="Tienda" sortKey="store" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                  </TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.sort((a, b) => a.priority - b.priority).map((item) => (
+                {sortedItems.map((item) => (
                   <TableRow key={item.id} data-testid={`wishlist-row-${item.id}`}>
                     <TableCell>{getPriorityBadge(item.priority)}</TableCell>
                     <TableCell>{getTypeBadge(item.item_type)}</TableCell>
