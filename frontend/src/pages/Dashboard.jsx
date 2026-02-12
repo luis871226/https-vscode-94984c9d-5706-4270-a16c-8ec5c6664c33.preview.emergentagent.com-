@@ -87,7 +87,7 @@ const Dashboard = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="font-heading text-4xl font-bold uppercase tracking-tight text-slate-900">
-            Dashboard
+            Colección
           </h1>
           <p className="font-mono text-sm text-slate-500 mt-1 uppercase tracking-wider">
             Resumen de tu colección
