@@ -167,6 +167,38 @@ class WishlistItem(WishlistItemBase):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+# ============== COMPOSITION MODELS ==============
+
+class CompositionWagon(BaseModel):
+    wagon_id: str
+    position: int  # Order in the composition (1, 2, 3...)
+
+class CompositionBase(BaseModel):
+    name: str
+    service_type: str = "pasajeros"  # pasajeros, mercancias, mixto
+    era: Optional[str] = None
+    locomotive_id: Optional[str] = None  # Reference to locomotive
+    wagons: List[CompositionWagon] = []  # Ordered list of wagons
+    notes: Optional[str] = None
+
+class CompositionCreate(CompositionBase):
+    pass
+
+class Composition(CompositionBase):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# ============== CSV IMPORT MODELS ==============
+
+class CSVImportResult(BaseModel):
+    success: bool
+    imported_count: int
+    skipped_count: int
+    errors: List[str]
+    imported_items: List[dict]
+
 # ============== LOCOMOTIVE ENDPOINTS ==============
 
 @api_router.get("/locomotives", response_model=List[Locomotive])
