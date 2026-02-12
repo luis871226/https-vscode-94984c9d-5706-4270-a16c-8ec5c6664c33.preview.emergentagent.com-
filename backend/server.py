@@ -810,6 +810,410 @@ async def import_jmri(files_content: List[str]):
         locomotives=imported
     )
 
+# ============== WISHLIST ENDPOINTS ==============
+
+@api_router.get("/wishlist", response_model=List[WishlistItem])
+async def get_wishlist():
+    items = await db.wishlist.find({}, {"_id": 0}).to_list(1000)
+    for item in items:
+        if isinstance(item.get('created_at'), str):
+            item['created_at'] = datetime.fromisoformat(item['created_at'])
+        if isinstance(item.get('updated_at'), str):
+            item['updated_at'] = datetime.fromisoformat(item['updated_at'])
+    return items
+
+@api_router.get("/wishlist/{item_id}", response_model=WishlistItem)
+async def get_wishlist_item(item_id: str):
+    item = await db.wishlist.find_one({"id": item_id}, {"_id": 0})
+    if not item:
+        raise HTTPException(status_code=404, detail="Item no encontrado")
+    if isinstance(item.get('created_at'), str):
+        item['created_at'] = datetime.fromisoformat(item['created_at'])
+    if isinstance(item.get('updated_at'), str):
+        item['updated_at'] = datetime.fromisoformat(item['updated_at'])
+    return item
+
+@api_router.post("/wishlist", response_model=WishlistItem)
+async def create_wishlist_item(item: WishlistItemCreate):
+    item_dict = item.model_dump()
+    item_obj = WishlistItem(**item_dict)
+    doc = item_obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    await db.wishlist.insert_one(doc)
+    return item_obj
+
+@api_router.put("/wishlist/{item_id}", response_model=WishlistItem)
+async def update_wishlist_item(item_id: str, item: WishlistItemCreate):
+    existing = await db.wishlist.find_one({"id": item_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Item no encontrado")
+    
+    update_data = item.model_dump()
+    update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
+    update_data['id'] = item_id
+    update_data['created_at'] = existing.get('created_at', datetime.now(timezone.utc).isoformat())
+    
+    await db.wishlist.update_one({"id": item_id}, {"$set": update_data})
+    
+    updated = await db.wishlist.find_one({"id": item_id}, {"_id": 0})
+    if isinstance(updated.get('created_at'), str):
+        updated['created_at'] = datetime.fromisoformat(updated['created_at'])
+    if isinstance(updated.get('updated_at'), str):
+        updated['updated_at'] = datetime.fromisoformat(updated['updated_at'])
+    return updated
+
+@api_router.delete("/wishlist/{item_id}")
+async def delete_wishlist_item(item_id: str):
+    result = await db.wishlist.delete_one({"id": item_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Item no encontrado")
+    return {"message": "Item eliminado"}
+
+@api_router.post("/wishlist/{item_id}/move-to-collection")
+async def move_wishlist_to_collection(item_id: str, purchase_date: Optional[str] = None, price: Optional[float] = None):
+    """Move a wishlist item to the collection (create locomotive or rolling stock)"""
+    item = await db.wishlist.find_one({"id": item_id}, {"_id": 0})
+    if not item:
+        raise HTTPException(status_code=404, detail="Item no encontrado")
+    
+    actual_price = price if price is not None else item.get('estimated_price')
+    actual_date = purchase_date or datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    
+    if item.get('item_type') == 'locomotora':
+        loco_data = {
+            'brand': item.get('brand', ''),
+            'model': item.get('model', ''),
+            'reference': item.get('reference', ''),
+            'locomotive_type': 'diesel',
+            'dcc_address': 3,
+            'purchase_date': actual_date,
+            'price': actual_price,
+            'condition': 'nuevo',
+            'notes': f"Desde lista de deseos. {item.get('notes', '')}".strip(),
+        }
+        loco_obj = Locomotive(**loco_data)
+        doc = loco_obj.model_dump()
+        doc['created_at'] = doc['created_at'].isoformat()
+        doc['updated_at'] = doc['updated_at'].isoformat()
+        await db.locomotives.insert_one(doc)
+        created_id = loco_obj.id
+        collection_type = 'locomotora'
+    else:
+        stock_data = {
+            'brand': item.get('brand', ''),
+            'model': item.get('model', ''),
+            'reference': item.get('reference', ''),
+            'stock_type': 'vagon_mercancias' if item.get('item_type') == 'vagon' else 'otro',
+            'purchase_date': actual_date,
+            'price': actual_price,
+            'condition': 'nuevo',
+            'notes': f"Desde lista de deseos. {item.get('notes', '')}".strip(),
+        }
+        stock_obj = RollingStock(**stock_data)
+        doc = stock_obj.model_dump()
+        doc['created_at'] = doc['created_at'].isoformat()
+        doc['updated_at'] = doc['updated_at'].isoformat()
+        await db.rolling_stock.insert_one(doc)
+        created_id = stock_obj.id
+        collection_type = 'material_rodante'
+    
+    # Delete from wishlist
+    await db.wishlist.delete_one({"id": item_id})
+    
+    return {
+        "message": "Item movido a la colección",
+        "collection_type": collection_type,
+        "created_id": created_id
+    }
+
+# ============== PDF EXPORT ENDPOINTS ==============
+from fastapi.responses import StreamingResponse
+from io import BytesIO
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+from reportlab.lib.units import mm, cm
+
+@api_router.get("/export/catalog/pdf")
+async def export_catalog_pdf():
+    """Export complete catalog (locomotives and rolling stock) to PDF"""
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=1*cm, leftMargin=1*cm, topMargin=1*cm, bottomMargin=1*cm)
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=18, spaceAfter=20, alignment=1)
+    subtitle_style = ParagraphStyle('Subtitle', parent=styles['Heading2'], fontSize=14, spaceAfter=10)
+    
+    # Title
+    elements.append(Paragraph("Catálogo de Colección Ferroviaria", title_style))
+    elements.append(Paragraph(f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # Locomotives section
+    locomotives = await db.locomotives.find({}, {"_id": 0}).to_list(1000)
+    if locomotives:
+        elements.append(Paragraph(f"Locomotoras ({len(locomotives)})", subtitle_style))
+        
+        # Table data
+        table_data = [['Marca', 'Modelo', 'Ref.', 'Tipo', 'DCC', 'Decoder', 'Precio']]
+        for loco in locomotives:
+            table_data.append([
+                loco.get('brand', '')[:15],
+                loco.get('model', '')[:20],
+                loco.get('reference', '')[:12],
+                loco.get('locomotive_type', '')[:10],
+                str(loco.get('dcc_address', '')),
+                f"{loco.get('decoder_brand', '')} {loco.get('decoder_model', '')}"[:15],
+                f"{loco.get('price', 0) or 0:.2f}€"
+            ])
+        
+        table = Table(table_data, colWidths=[2.5*cm, 4*cm, 2.5*cm, 2*cm, 1.2*cm, 3*cm, 2*cm])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 9),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+        ]))
+        elements.append(table)
+        elements.append(Spacer(1, 20))
+    
+    # Rolling Stock section
+    rolling_stock = await db.rolling_stock.find({}, {"_id": 0}).to_list(1000)
+    if rolling_stock:
+        elements.append(Paragraph(f"Material Rodante ({len(rolling_stock)})", subtitle_style))
+        
+        table_data = [['Marca', 'Modelo', 'Referencia', 'Tipo', 'Era', 'Precio']]
+        for stock in rolling_stock:
+            table_data.append([
+                stock.get('brand', '')[:15],
+                stock.get('model', '')[:25],
+                stock.get('reference', '')[:15],
+                stock.get('stock_type', '')[:15],
+                stock.get('era', '')[:8],
+                f"{stock.get('price', 0) or 0:.2f}€"
+            ])
+        
+        table = Table(table_data, colWidths=[3*cm, 5*cm, 3*cm, 3*cm, 1.5*cm, 2*cm])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.darkgreen),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 9),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+        ]))
+        elements.append(table)
+        elements.append(Spacer(1, 20))
+    
+    # Summary
+    total_locos = sum(loco.get('price', 0) or 0 for loco in locomotives)
+    total_stock = sum(s.get('price', 0) or 0 for s in rolling_stock)
+    
+    elements.append(Paragraph("Resumen", subtitle_style))
+    summary_data = [
+        ['Concepto', 'Cantidad', 'Valor'],
+        ['Locomotoras', str(len(locomotives)), f"{total_locos:.2f}€"],
+        ['Material Rodante', str(len(rolling_stock)), f"{total_stock:.2f}€"],
+        ['TOTAL', str(len(locomotives) + len(rolling_stock)), f"{total_locos + total_stock:.2f}€"],
+    ]
+    summary_table = Table(summary_data, colWidths=[6*cm, 3*cm, 3*cm])
+    summary_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('BACKGROUND', (0, -1), (-1, -1), colors.lightblue),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+        ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+    ]))
+    elements.append(summary_table)
+    
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=catalogo_{datetime.now().strftime('%Y%m%d')}.pdf"}
+    )
+
+@api_router.get("/export/locomotive/{locomotive_id}/pdf")
+async def export_locomotive_pdf(locomotive_id: str):
+    """Export individual locomotive data sheet to PDF"""
+    loco = await db.locomotives.find_one({"id": locomotive_id}, {"_id": 0})
+    if not loco:
+        raise HTTPException(status_code=404, detail="Locomotora no encontrada")
+    
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=2*cm, leftMargin=2*cm, topMargin=2*cm, bottomMargin=2*cm)
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=16, spaceAfter=10, alignment=1)
+    section_style = ParagraphStyle('Section', parent=styles['Heading2'], fontSize=12, spaceBefore=15, spaceAfter=8, textColor=colors.darkblue)
+    
+    # Title
+    elements.append(Paragraph(f"Ficha de Locomotora", title_style))
+    elements.append(Paragraph(f"{loco.get('brand', '')} - {loco.get('model', '')}", title_style))
+    elements.append(Spacer(1, 15))
+    
+    # Basic Info
+    elements.append(Paragraph("Información General", section_style))
+    info_data = [
+        ['Marca:', loco.get('brand', '-'), 'Modelo:', loco.get('model', '-')],
+        ['Referencia:', loco.get('reference', '-'), 'Tipo:', loco.get('locomotive_type', '-')],
+        ['Matrícula:', loco.get('registration_number', '-'), 'Era:', loco.get('era', '-')],
+        ['Compañía:', loco.get('railway_company', '-'), 'Estado:', loco.get('condition', '-')],
+        ['Fecha Compra:', loco.get('purchase_date', '-'), 'Precio:', f"{loco.get('price', 0) or 0:.2f}€"],
+    ]
+    info_table = Table(info_data, colWidths=[3*cm, 5*cm, 3*cm, 5*cm])
+    info_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(info_table)
+    
+    # DCC Section
+    elements.append(Paragraph("Configuración Digital (DCC)", section_style))
+    dcc_data = [
+        ['Dirección DCC:', str(loco.get('dcc_address', 3))],
+        ['Decoder:', f"{loco.get('decoder_brand', '-')} {loco.get('decoder_model', '-')}"],
+        ['Proyecto Sonido:', loco.get('sound_project', '-')],
+    ]
+    dcc_table = Table(dcc_data, colWidths=[4*cm, 12*cm])
+    dcc_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    elements.append(dcc_table)
+    
+    # Functions
+    functions = loco.get('functions', [])
+    if functions:
+        elements.append(Paragraph("Funciones Programadas", section_style))
+        func_data = [['Función', 'Descripción', 'Sonido']]
+        for func in functions:
+            func_data.append([
+                func.get('function_number', ''),
+                func.get('description', ''),
+                'Sí' if func.get('is_sound') else 'No'
+            ])
+        func_table = Table(func_data, colWidths=[2.5*cm, 10*cm, 2*cm])
+        func_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('ALIGN', (2, 0), (2, -1), 'CENTER'),
+        ]))
+        elements.append(func_table)
+    
+    # CV Modifications
+    cvs = loco.get('cv_modifications', [])
+    if cvs:
+        elements.append(Paragraph("CVs Modificados", section_style))
+        cv_data = [['CV', 'Valor', 'Descripción']]
+        for cv in cvs:
+            cv_data.append([
+                str(cv.get('cv_number', '')),
+                str(cv.get('value', '')),
+                cv.get('description', '')
+            ])
+        cv_table = Table(cv_data, colWidths=[2*cm, 2*cm, 10*cm])
+        cv_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('ALIGN', (0, 0), (1, -1), 'CENTER'),
+        ]))
+        elements.append(cv_table)
+    
+    # Notes
+    if loco.get('notes'):
+        elements.append(Paragraph("Notas", section_style))
+        elements.append(Paragraph(loco.get('notes', ''), styles['Normal']))
+    
+    doc.build(elements)
+    buffer.seek(0)
+    
+    filename = f"locomotora_{loco.get('reference', 'sin_ref')}_{datetime.now().strftime('%Y%m%d')}.pdf"
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+@api_router.get("/export/rolling-stock/{stock_id}/pdf")
+async def export_rolling_stock_pdf(stock_id: str):
+    """Export individual rolling stock data sheet to PDF"""
+    stock = await db.rolling_stock.find_one({"id": stock_id}, {"_id": 0})
+    if not stock:
+        raise HTTPException(status_code=404, detail="Material rodante no encontrado")
+    
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=2*cm, leftMargin=2*cm, topMargin=2*cm, bottomMargin=2*cm)
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=16, spaceAfter=10, alignment=1)
+    section_style = ParagraphStyle('Section', parent=styles['Heading2'], fontSize=12, spaceBefore=15, spaceAfter=8, textColor=colors.darkgreen)
+    
+    # Title
+    elements.append(Paragraph(f"Ficha de Material Rodante", title_style))
+    elements.append(Paragraph(f"{stock.get('brand', '')} - {stock.get('model', '')}", title_style))
+    elements.append(Spacer(1, 15))
+    
+    # Basic Info
+    elements.append(Paragraph("Información General", section_style))
+    info_data = [
+        ['Marca:', stock.get('brand', '-'), 'Modelo:', stock.get('model', '-')],
+        ['Referencia:', stock.get('reference', '-'), 'Tipo:', stock.get('stock_type', '-')],
+        ['Era:', stock.get('era', '-'), 'Compañía:', stock.get('railway_company', '-')],
+        ['Estado:', stock.get('condition', '-'), 'Fecha Compra:', stock.get('purchase_date', '-')],
+        ['Precio:', f"{stock.get('price', 0) or 0:.2f}€", '', ''],
+    ]
+    info_table = Table(info_data, colWidths=[3*cm, 5*cm, 3*cm, 5*cm])
+    info_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(info_table)
+    
+    # Notes
+    if stock.get('notes'):
+        elements.append(Paragraph("Notas", section_style))
+        elements.append(Paragraph(stock.get('notes', ''), styles['Normal']))
+    
+    doc.build(elements)
+    buffer.seek(0)
+    
+    filename = f"material_{stock.get('reference', 'sin_ref')}_{datetime.now().strftime('%Y%m%d')}.pdf"
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
 # Include the router in the main app
 app.include_router(api_router)
 
