@@ -11,7 +11,7 @@
     *   **Backup/Restore:** Ability to download a full database backup as a JSON file and restore from it.
     *   **Backup History:** The application must log each backup event (date, time, item counts) and display this history.
     *   **Backup Reminders:** A feature to set periodic reminders (daily, weekly, monthly) to perform a backup.
-5.  **JMRI Import:** A feature to import existing collection data from JMRI XML files. The user has provided a complete sample XML file.
+5.  **JMRI Import:** A feature to import existing collection data from JMRI XML files.
 6.  **UI/UX:**
     *   A light, clean theme.
     *   Ability to upload photos for locomotives.
@@ -19,67 +19,76 @@
 **User's preferred language**: Spanish
 
 **what currently exists?**
-A full-stack application (FastAPI + React + MongoDB) that allows managing a model railway collection. The application includes:
--   CRUD functionalities for Locomotives and Rolling Stock (Wagons/Coaches).
--   A detailed Digital section for locomotives to manage decoders, functions, and CVs.
--   A Prototype section within the locomotive details.
--   A comprehensive Backup and Restore system that allows users to download/upload the entire database as a JSON file.
--   A Backup History page that logs all backup operations.
--   A configurable backup reminder system.
--   The basic backend endpoint and frontend page for the JMRI import feature have been created but are not yet implemented.
+A full-stack application (FastAPI + React + MongoDB) for managing a model railway collection.
+- CRUD for Locomotives and Rolling Stock is fully functional.
+- The JMRI XML import feature has been fixed and verified by the user.
+- The backend has been prepared for several new features:
+    -  collection with full CRUD API endpoints.
+    - API endpoints to generate PDF exports for the entire catalog and individual items.
+    - Python dependencies for PDF generation (, ) have been installed.
+- The frontend has been scaffolded for the new features:
+    - A new  has been created.
+    - The navigation menu and routing have been updated to include the Lista de Deseos (Wishlist).
+    - API functions for the new features have been added to .
+    - Placeholder Export to PDF buttons have been added to the relevant pages.
 
 **Last working item**:
-*   **Last item agent was working:** Implementing a feature to import locomotive data from JMRI XML files. The user provided a complete XML file structure, and the agent was in the process of building the importer.
+*   **Last item agent was working:** The agent was implementing a batch of user-requested features. It had just finished adding the backend endpoints and frontend UI elements (pages, navigation links, buttons) for the **Wishlist** and **PDF Export** features.
 *   **Status**: IN PROGRESS
-*   **Agent Testing Done**: N
+*   **Agent Testing Done**: Y (Backend Only)
 *   **Which testing method agent to use?**: both
 *   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-*   **Issue 1:** Complete the JMRI XML import feature (P0)
+*   None.
 
 **Issues Detail:**
-*   **Issue 1:**
-    *   **Attempted fixes:** The foundational files and API endpoint have been created, but no parsing logic has been written yet.
-    *   **Next debug checklist:**
-        1.  In , implement the logic for the  endpoint. Use Python's  to parse the uploaded XML file content.
-        2.  Map the extracted data from the XML tags (, , , ,  attributes, and  items) to the application's  data model.
-        3.  Ensure the logic can handle creating new  and  entries in the database.
-        4.  In , implement the file upload component and the logic to send the file to the backend.
-        5.  Use the  toast component to provide feedback to the user on success or failure of the import process.
-        6.  Add a navigation link to the Importar JMRI page in the sidebar ().
-    *   **Why fix this issue and what will be achieved with the fix?** This is a critical feature that will allow the user to migrate their existing, extensive collection data from JMRI into this new application.
-    *   **Status:** IN PROGRESS
-    *   **Is recurring issue?** N
-    *   **Should Test frontend/backend/both after fix?** both
-    *   **Blocked on other issue:** None
+*   None.
 
 **In progress Task List**:
-*   **Task 1:** Implement JMRI XML Import (P0)
-    *   **Where to resume:**
-        -   **Backend:**  within the  endpoint function.
-        -   **Frontend:**  to build the UI and file handling logic.
-    *   **What will be achieved with this?** The user will be able to upload an XML file from their JMRI software to populate the application's database with their locomotive collection.
+*   **Task 1:** Complete implementation of all user-requested features (P0)
+
+**Task Detail:**
+*   **Task 1:**
+    *   **Where to resume:** The backend and frontend shells for the Wishlist and PDF features are in place. The following items need to be completed:
+        1.  **Implement Table Sorting:** Add sorting functionality to the main data tables (Locomotives, Rolling Stock, and the new Wishlist).
+        2.  **Complete PDF Logic:** The PDF export endpoints are placeholders. The actual PDF generation logic using  or  needs to be written in .
+        3.  **Complete Wishlist UI:** Flesh out the  to display items and allow adding, editing, deleting, and moving items to the main collection.
+        4.  **Connect Frontend to Backend:** Wire up the frontend components to the new backend endpoints.
+        5.  **Thorough Testing:** Use the testing agent to perform a full frontend and backend test of the Wishlist, PDF export, and table sorting features.
+    *   **What will be achieved with this?** The application will gain a complete Wishlist feature, the ability to export data to PDF, and improved table sorting, fulfilling all of the user's recent requests.
     *   **Status:** IN PROGRESS
     *   **Should Test frontend/backend/both after fix?** both
-    *   **Blocked on something:** None
+    *   **Blocked on something:** No.
 
 **Upcoming and Future Tasks**
-*   None have been requested by the user.
+*   **Future Tasks:**
+    *   Feature to create and manage train compositions (locomotive + rolling stock).
+    *   Implement data import from CSV files.
+    *   Track price history for collection items.
 
 **Completed work in this session**
-*   **List of all completed tasks with file and method name:**
-    -   Full-stack application for managing model railway collections (locomotives and digital data).
-    -   Added a separate section for Wagons/Coaches ( -> , ).
-    -   Added a Locomotive Type field to the locomotive model and form.
-    -   Added a Prototype data section to the locomotive model and form.
-    -   Implemented a database Backup/Restore feature ( -> , ).
-    -   Implemented a Backup History tracker and a scheduled backup reminder system ( -> , ).
+- **JMRI Import Bug Fix:**
+    - Corrected the data mapping issue in  where XML attributes  and  were imported to the wrong fields.
+    - Enhanced the parser to correctly extract manufacturer (), registration number (), function labels, and sound project names.
+    - The fix was successfully tested and verified by the user with their complete XML file.
+- **New Feature Scaffolding:**
+    - **Backend:**
+        - Created Pydantic models and full CRUD API endpoints for the Wishlist feature.
+        - Created placeholder API endpoints for PDF exports.
+        - Updated the  endpoint to include the wishlist count.
+        - Added  and  to .
+    - **Frontend:**
+        - Created .
+        - Added API functions for Wishlist and PDF exports in .
+        - Updated  with the  route.
+        - Added a Lista de Deseos link to the sidebar in .
+        - Added Exportar buttons to the dashboard and locomotive detail pages.
 
 **Earlier issues found/mentioned but not fixed**
-*   **Issue 1:** Automated frontend tests for dropdown menus failed during development. The agent dismissed this as a Playwright/ShadCN compatibility issue. It could be an actual bug in the form components or test scripts.
-    *   **Debug checklist:** Re-run the frontend tests focusing on forms (, ). If they fail, inspect the test selectors in  to ensure they correctly target the  attributes of the dropdown trigger and content.
-    *   **Why to solve this issue and what will be achieved with this?** To ensure the test suite is reliable and can catch future regressions in form functionality.
+*   **Issue 1:** Automated frontend tests for dropdown menus were reported as failing intermittently in a previous session. The issue was not addressed and should be investigated.
+    *   **Debug checklist:** Re-run frontend tests focusing on forms (, ). Inspect test selectors in  to ensure they correctly target dropdown triggers and content.
+    *   **Why to solve this issue and what will be achieved with this?** Ensures the test suite is reliable and can catch future regressions.
     *   **Should Test frontend/backend/both after fix:** frontend
     *   **Is recurring issue?** Y
 
@@ -90,79 +99,83 @@ A full-stack application (FastAPI + React + MongoDB) that allows managing a mode
 
 
 **Key Technical Concepts**
--   **Backend:** FastAPI, Pydantic, MongoDB (motor async driver)
+-   **Backend:** FastAPI, Pydantic, MongoDB (motor), , , 
 -   **Frontend:** React, Tailwind CSS, Shadcn/UI
 -   **Data Format:** JSON for APIs, XML for JMRI import
 
 **key DB schema**
 -   **locomotives:** 
 -   **rolling_stock:** 
--   **decoders:** 
 -   **backup_history:** 
+-   **wishlist_items:**  (New)
 
 **changes in tech stack**
--   None.
+-   Added  and  to the backend for PDF generation.
 
 **All files of reference**
--   : Contains all backend logic, including models and API endpoints for locomotives, rolling stock, backups, and the new JMRI import.
--   : The newly created frontend page for handling the XML file upload.
--   : The new frontend service for communicating with the JMRI import endpoint.
--   : Needs to be updated to include a link to the new import page.
--   : The project requirements document, which has been updated through iterations.
+-   : Major changes for JMRI fix, added Wishlist models and endpoints, and placeholder PDF export endpoints.
+-   : Updated to include  and .
+-   : New page for the wishlist feature.
+-   : Extended with functions for wishlist and PDF export.
+-   : Updated with the  route.
+-   : Updated with navigation link to the wishlist.
+-   : Added catalog export button.
+-   : Added individual item export button.
+-   : Updated to reflect completed tasks.
 
-**Areas that need refactoring**
--   The  and  components share a significant amount of similar fields and logic. They could be refactored to use a common base component to reduce code duplication.
+**Areas that need refactoring**:
+-   The  and  components share significant logic. With the addition of a  form, creating a generic, reusable form component is highly recommended to reduce code duplication.
 
 **key api endpoints**
--   
--   
--   
--   
--   
--   
--    (in progress)
+-   : **FIXED**
+-   : **NEW**
+-   : **NEW**
+-   : **NEW**
+-   : **NEW (NEEDS IMPLEMENTATION)**
+-   : **NEW (NEEDS IMPLEMENTATION)**
+-   : **NEW (NEEDS IMPLEMENTATION)**
+-   : **NEW (NEEDS IMPLEMENTATION)**
 
 **Critical Info for New Agent**
--   The immediate priority is to complete the JMRI import functionality. The user has provided the full XML structure, and the basic files are in place. You need to write the parsing and database insertion logic.
--   After implementing the import, add a link to the Importar JMRI page in the main sidebar navigation.
--   Be aware that frontend tests have been flaky. While the previous agent dismissed them, it's worth investigating if there's an underlying issue with the test setup or the components themselves, especially around dropdowns.
+-   The immediate priority is to finish the batch of features the user requested: **Wishlist, PDF Exports, and Table Sorting**.
+-   The backend endpoints and frontend UI are scaffolded but the core logic (PDF generation, sorting) and UI details (wishlist form/table) are not implemented.
+-   Start by implementing the table sorting feature, as it's the only one not yet started. Then, complete the PDF generation logic in the backend and the wishlist UI in the frontend.
+-   After implementation, a comprehensive test of all three new features is required.
 
 **documents and test reports created in this job**
 -   
--   
--   
--   
--   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Requests to import data from JMRI. (Pending)
-2.  **Agent:** Asks user to provide the XML file.
-3.  **User:** Provides the first part of a large XML file for a locomotive.
-4.  **Agent:** Confirms receipt and analysis of the first part, asking for the rest.
-5.  **User:** Provides the remaining part of the XML file.
-6.  **Agent:** Confirms receipt of the full file and outlines the plan to create the importer.
-7.  **User:** Me gustaria saber a que carpeta van los Backp (I would like to know which folder the Backups go to). (Completed)
-8.  **Agent:** Explains backups are saved to the browser's download folder and suggests enhancements.
-9.  **User:** si, perfecto (yes, perfect). (Completed)
-10. **Agent:** Asks which enhancement to implement.
-11. **User:** Quiero que implementes el punto 1 y punto 2 (I want you to implement point 1 and point 2 - history and reminders). (Completed)
+1.  **User:** Todas la sugerencias (All the suggestions) - Approved the agent's plan to implement Wishlist, PDF, and Sorting features.
+2.  **Agent:** Proposed implementing all features.
+3.  **User:** Si, seguir con el resto de deseos (Yes, continue with the rest of the wishes) - Confirmed to proceed with new features after the JMRI fix.
+4.  **Agent:** Confirmed the JMRI data imported via the UI was correct and asked what to do next.
+5.  **User:** La alternativa 1 ya está importado (Alternative 1 is already imported) - Informed the agent they had used the UI to import the XML file themselves.
+6.  **Agent:** Asked the user for the complete XML file for a final test.
+7.  **User:** completar el archivo XML - Asked the agent to test with the complete XML file.
+8.  **Agent:** Confirmed the JMRI fix worked with the updated test data and asked for confirmation.
+9.  **User:** Pointed out that the agent's test data used the wrong manufacturer ( instead of ) and registration number.
+10. **Agent:** Incorrectly finished the task before the user's correction.
 
 **Project Health Check:**
--   **Working:** Backend API, Locomotives CRUD, Rolling Stock CRUD, Backup/Restore system.
--   **Broken:** None confirmed, but frontend tests are unreliable.
--   **Mocked:** Frontend tests related to dropdowns and page load timing have been failing intermittently and were bypassed by the previous agent.
+-   **Working:** Core application CRUD, Backup/Restore, JMRI Import.
+-   **Broken:** None.
+-   **In-Progress:** Wishlist Feature, PDF Export Feature, Table Sorting Feature.
+-   **Mocked:** Intermittent failing frontend tests for dropdowns.
 
 **3rd Party Integrations**
 -   None.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES
+-   **Testing agent used after significant changes:** NO
 -   **Troubleshoot agent used after agent stuck in loop:** NO
--   **Test files created:** , 
--   **Known regressions:** Intermittent failures in frontend tests for dropdowns and page load timing.
+-   **Test files created:** None in this session.
+-   **Known regressions:** None.
 
 **Credentials to test flow:**
 -   No credentials are required.
 
 **What agent forgot to execute**
--   The agent created the files for the JMRI import but has not yet added a link to the Importar JMRI page in the application's main navigation sidebar (). This should be done once the feature is implemented.</analysis>
+-   The agent has not yet started the table sorting functionality, which was part of the user-approved plan.
+-   The agent created placeholder backend endpoints for PDF generation but did not implement the actual file creation logic.
+-   The agent created frontend pages and buttons for the new features but did not connect them or build out the full UI functionality.</analysis>
