@@ -134,13 +134,38 @@ class StatsResponse(BaseModel):
     total_rolling_stock: int
     total_decoders: int
     total_sound_projects: int
+    total_wishlist: int
     total_value: float
+    wishlist_value: float
     locomotives_by_brand: Dict[str, int]
     locomotives_by_company: Dict[str, int]
     locomotives_by_condition: Dict[str, int]
     locomotives_by_decoder: Dict[str, int]
     locomotives_by_type: Dict[str, int]
     rolling_stock_by_type: Dict[str, int]
+
+# ============== WISHLIST MODELS ==============
+
+class WishlistItemBase(BaseModel):
+    item_type: str = "locomotora"  # locomotora, vagon, accesorio
+    brand: str
+    model: str
+    reference: str
+    estimated_price: Optional[float] = None
+    priority: int = 2  # 1=alta, 2=media, 3=baja
+    store: Optional[str] = None
+    url: Optional[str] = None
+    notes: Optional[str] = None
+    image_url: Optional[str] = None
+
+class WishlistItemCreate(WishlistItemBase):
+    pass
+
+class WishlistItem(WishlistItemBase):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # ============== LOCOMOTIVE ENDPOINTS ==============
 
