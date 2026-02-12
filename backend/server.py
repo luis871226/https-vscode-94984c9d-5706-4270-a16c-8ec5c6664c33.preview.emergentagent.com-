@@ -432,12 +432,18 @@ async def get_stats():
         stock_type = stock.get('stock_type', 'otro')
         by_stock_type[stock_type] = by_stock_type.get(stock_type, 0) + 1
     
+    # Wishlist stats
+    wishlist = await db.wishlist.find({}, {"_id": 0}).to_list(1000)
+    wishlist_value = sum(item.get('estimated_price', 0) or 0 for item in wishlist)
+    
     return StatsResponse(
         total_locomotives=len(locomotives),
         total_rolling_stock=len(rolling_stock),
         total_decoders=len(decoders),
         total_sound_projects=len(sound_projects),
+        total_wishlist=len(wishlist),
         total_value=total_value,
+        wishlist_value=wishlist_value,
         locomotives_by_brand=by_brand,
         locomotives_by_company=by_company,
         locomotives_by_condition=by_condition,
