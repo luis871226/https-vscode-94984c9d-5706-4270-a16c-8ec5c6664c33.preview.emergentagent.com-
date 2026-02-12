@@ -135,6 +135,7 @@ class StatsResponse(BaseModel):
     total_decoders: int
     total_sound_projects: int
     total_wishlist: int
+    total_compositions: int
     total_value: float
     wishlist_value: float
     locomotives_by_brand: Dict[str, int]
