@@ -549,6 +549,172 @@ async def restore_backup(backup: BackupData):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al restaurar backup: {str(e)}")
 
+# ============== JMRI IMPORT ENDPOINT ==============
+
+import xml.etree.ElementTree as ET
+import re
+
+class JMRIImportResult(BaseModel):
+    success: bool
+    imported_count: int
+    skipped_count: int
+    errors: List[str]
+    locomotives: List[dict]
+
+def parse_jmri_xml(xml_content: str) -> dict:
+    """Parse JMRI locomotive XML and extract relevant data"""
+    try:
+        root = ET.fromstring(xml_content)
+        loco_elem = root.find('locomotive')
+        
+        if loco_elem is None:
+            return None
+        
+        # Extract basic info from locomotive attributes
+        mfg = loco_elem.get('mfg', '')
+        road_name = loco_elem.get('roadName', '')
+        road_number = loco_elem.get('roadNumber', '')
+        dcc_address = loco_elem.get('dccAddress', '3')
+        comment = loco_elem.get('comment', '')
+        
+        # Extract decoder info
+        decoder_elem = loco_elem.find('decoder')
+        decoder_brand = ''
+        decoder_model = ''
+        if decoder_elem is not None:
+            decoder_family = decoder_elem.get('family', '')
+            decoder_model = decoder_elem.get('model', '')
+            # Extract brand from family (e.g., "ESU LokPilot V4.0" -> "ESU")
+            if decoder_family:
+                parts = decoder_family.split(' ')
+                if parts:
+                    decoder_brand = parts[0]
+        
+        # Extract Project Loco Name and Type from varValue
+        project_name = ''
+        project_type = ''
+        values_elem = loco_elem.find('.//decoderDef')
+        if values_elem is not None:
+            for var in values_elem.findall('varValue'):
+                item = var.get('item', '')
+                value = var.get('value', '')
+                if item == 'Project Loco Name':
+                    project_name = value
+                elif item == 'Project Loco Type':
+                    project_type = value
+        
+        # Extract CV values
+        cv_modifications = []
+        cv_values_elem = loco_elem.find('values')
+        if cv_values_elem is not None:
+            # Get important CVs only (not all the ESU function mapping)
+            important_cvs = {
+                '1': 'Dirección corta',
+                '2': 'Vstart',
+                '3': 'Aceleración',
+                '4': 'Deceleración',
+                '5': 'Vmax',
+                '6': 'Vmedia',
+                '29': 'Configuración',
+                '17': 'Dirección larga (alta)',
+                '18': 'Dirección larga (baja)',
+            }
+            for cv_elem in cv_values_elem.findall('CVvalue'):
+                cv_name = cv_elem.get('name', '')
+                cv_value = cv_elem.get('value', '')
+                # Only include simple CVs (not indexed ones like 16.2.xxx)
+                if cv_name and '.' not in cv_name and cv_name in important_cvs:
+                    try:
+                        cv_modifications.append({
+                            'cv_number': int(cv_name),
+                            'value': int(cv_value),
+                            'description': important_cvs.get(cv_name, f'CV{cv_name}')
+                        })
+                    except ValueError:
+                        pass
+        
+        # Determine locomotive type based on project name or road name
+        loco_type = 'diesel'  # default
+        name_lower = (road_name + ' ' + project_name).lower()
+        if any(x in name_lower for x in ['electric', 'eléctric', '252', '269', '251', 'ave', 'alta velocidad']):
+            loco_type = 'electrica'
+        elif any(x in name_lower for x in ['vapor', 'steam', '141', '240', '030']):
+            loco_type = 'vapor'
+        elif any(x in name_lower for x in ['automotor', 'dmu', 'emu', '592', '594', '596']):
+            loco_type = 'automotor'
+        elif any(x in name_lower for x in ['ave', 's-100', 's-102', 's-103', 'talgo', 'alta velocidad']):
+            loco_type = 'alta_velocidad'
+        
+        return {
+            'brand': mfg,
+            'model': road_name or project_name,
+            'reference': '',  # Not available in JMRI
+            'locomotive_type': loco_type,
+            'paint_scheme': '',
+            'registration_number': road_number,
+            'prototype_type': project_name,
+            'dcc_address': int(dcc_address) if dcc_address.isdigit() else 3,
+            'decoder_brand': decoder_brand,
+            'decoder_model': decoder_model,
+            'sound_project': project_name if decoder_brand else '',
+            'notes': comment,
+            'cv_modifications': cv_modifications,
+            'condition': 'nuevo',
+            'functions': [],
+        }
+    except ET.ParseError as e:
+        raise ValueError(f"Error parsing XML: {str(e)}")
+
+@api_router.post("/import/jmri", response_model=JMRIImportResult)
+async def import_jmri(files_content: List[str]):
+    """Import locomotives from JMRI XML files"""
+    imported = []
+    skipped = 0
+    errors = []
+    
+    for i, xml_content in enumerate(files_content):
+        try:
+            loco_data = parse_jmri_xml(xml_content)
+            if loco_data:
+                # Create locomotive
+                loco_obj = Locomotive(**loco_data)
+                doc = loco_obj.model_dump()
+                doc['created_at'] = doc['created_at'].isoformat()
+                doc['updated_at'] = doc['updated_at'].isoformat()
+                await db.locomotives.insert_one(doc)
+                imported.append({
+                    'brand': loco_data['brand'],
+                    'model': loco_data['model'],
+                    'dcc_address': loco_data['dcc_address']
+                })
+            else:
+                skipped += 1
+                errors.append(f"Archivo {i+1}: No se encontró elemento locomotive")
+        except Exception as e:
+            skipped += 1
+            errors.append(f"Archivo {i+1}: {str(e)}")
+    
+    # Record in backup history
+    if imported:
+        history_entry = BackupHistoryEntry(
+            type="jmri_import",
+            locomotives_count=len(imported),
+            rolling_stock_count=0,
+            decoders_count=0,
+            sound_projects_count=0
+        )
+        history_doc = history_entry.model_dump()
+        history_doc['created_at'] = history_doc['created_at'].isoformat()
+        await db.backup_history.insert_one(history_doc)
+    
+    return JMRIImportResult(
+        success=len(imported) > 0,
+        imported_count=len(imported),
+        skipped_count=skipped,
+        errors=errors,
+        locomotives=imported
+    )
+
 # Include the router in the main app
 app.include_router(api_router)
 
