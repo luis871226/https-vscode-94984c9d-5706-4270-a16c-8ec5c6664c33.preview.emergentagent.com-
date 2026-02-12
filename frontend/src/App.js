@@ -14,6 +14,8 @@ import SoundProjects from "./pages/SoundProjects";
 import SoundProjectForm from "./pages/SoundProjectForm";
 import BackupRestore from "./pages/BackupRestore";
 import JMRIImport from "./pages/JMRIImport";
+import Wishlist from "./pages/Wishlist";
+import WishlistForm from "./pages/WishlistForm";
 import "@/App.css";
 
 function App() {
@@ -37,6 +39,9 @@ function App() {
             <Route path="sound-projects" element={<SoundProjects />} />
             <Route path="sound-projects/new" element={<SoundProjectForm />} />
             <Route path="sound-projects/:id/edit" element={<SoundProjectForm />} />
+            <Route path="wishlist" element={<Wishlist />} />
+            <Route path="wishlist/new" element={<WishlistForm />} />
+            <Route path="wishlist/:id/edit" element={<WishlistForm />} />
             <Route path="backup" element={<BackupRestore />} />
             <Route path="jmri-import" element={<JMRIImport />} />
           </Route>
