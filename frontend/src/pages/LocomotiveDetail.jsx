@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { Train, Edit, Trash2, ArrowLeft, Calendar, Euro, Tag, Cpu, Volume2, Hash, Building } from "lucide-react";
-import { getLocomotive, deleteLocomotive } from "../lib/api";
+import { Train, Edit, Trash2, ArrowLeft, Calendar, Euro, Tag, Cpu, Volume2, Hash, Building, FileDown } from "lucide-react";
+import { getLocomotive, deleteLocomotive, exportLocomotivePDF } from "../lib/api";
 import { Button } from "../components/ui/button";
 import {
   AlertDialog,
