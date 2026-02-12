@@ -6,7 +6,7 @@ from datetime import datetime
 import json
 
 class RailwayAPITester:
-    def __init__(self, base_url="https://rail-collection.preview.emergentagent.com"):
+    def __init__(self, base_url="https://jmri-importer.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0
