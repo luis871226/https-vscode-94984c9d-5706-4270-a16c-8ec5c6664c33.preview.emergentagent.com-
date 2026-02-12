@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getComposition, deleteComposition } from '../lib/api';
+import { getComposition, deleteComposition, duplicateComposition } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { useToast } from '../hooks/use-toast';
-import { ArrowLeft, Edit, Trash2, Train, TrainTrack, Layers } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Train, TrainTrack, Layers, Copy } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,6 +51,19 @@ export default function CompositionDetail() {
     }
   };
 
+  const handleDuplicate = async () => {
+    try {
+      const response = await duplicateComposition(id);
+      toast({ 
+        title: 'Duplicada', 
+        description: `Se ha creado "${response.data.new_name}"` 
+      });
+      navigate(`/compositions/${response.data.new_id}`);
+    } catch (error) {
+      toast({ title: 'Error', description: 'Error al duplicar', variant: 'destructive' });
+    }
+  };
+
   const getServiceBadge = (type) => {
     switch (type) {
       case 'pasajeros': return <Badge className="bg-blue-600">Pasajeros</Badge>;
@@ -91,6 +104,15 @@ export default function CompositionDetail() {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleDuplicate}
+            className="gap-2"
+            data-testid="duplicate-btn"
+          >
+            <Copy className="w-4 h-4" />
+            Duplicar
+          </Button>
           <Link to={`/compositions/${id}/edit`}>
             <Button variant="outline" className="gap-2" data-testid="edit-btn">
               <Edit className="w-4 h-4" />
