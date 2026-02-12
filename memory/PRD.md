@@ -30,41 +30,60 @@ Aplicación para PC para gestionar una colección de modelismo ferroviario (Esca
 
 8. **Exportación PDF**: Catálogo completo y fichas individuales de locomotoras/vagones
 
+9. **Composiciones de Trenes**: Asociar locomotora + vagones con orden específico
+
+10. **Importar desde CSV**: Cargar colección desde archivos CSV con plantillas
+
 ## What's Been Implemented
 
-### 12/02/2026 - Nuevas Funcionalidades P1
+### 12/02/2026 - Composiciones y CSV Import (P0)
+- ✅ **Composiciones de Trenes**: CRUD completo con:
+  - Nombre, tipo de servicio (pasajeros/mercancías/mixto), época
+  - Selección de locomotora desde la colección existente
+  - Añadir múltiples vagones con orden específico (posición)
+  - Reordenar vagones con botones ▲▼
+  - Vista visual de la composición con locomotora y vagones enlazados
+- ✅ **Importar desde CSV**:
+  - Plantillas descargables para locomotoras y vagones
+  - Subir archivo CSV o pegar contenido directamente
+  - Validación de campos requeridos
+  - Informe de resultados con items importados y errores
+- ✅ **Navegación actualizada**: Enlace "Composiciones" en navbar
+- ✅ **Testing**: 100% backend (14/14 tests) + 100% frontend
+
+### 12/02/2026 - Funcionalidades P1
 - ✅ **Ordenamiento de Tablas**: Cabeceras clicables en Locomotoras, Vagones y Lista de Deseos
-- ✅ **Exportar Catálogo PDF**: Botón en Dashboard genera PDF completo con locomotoras, vagones y resumen
+- ✅ **Exportar Catálogo PDF**: Botón en Dashboard genera PDF completo
 - ✅ **Exportar Locomotora PDF**: Ficha individual con toda la información técnica y DCC
-- ✅ **Exportar Vagón PDF**: Ficha individual de material rodante
-- ✅ **Lista de Deseos Completa**: CRUD + mover a colección + ordenamiento por columnas
+- ✅ **Lista de Deseos Completa**: CRUD + mover a colección + ordenamiento
 
 ### 11/02/2026 - JMRI Import & Bug Fixes
 - ✅ **Corrección Bug JMRI**: Mapeo correcto model→reference, roadName→model
 - ✅ **Funciones JMRI**: Extracción de functionlabels, soundlabels y Project Loco Name
 
 ### Backend (FastAPI + MongoDB)
-- ✅ CRUD Locomotoras con campos Prototipo
-- ✅ CRUD Vagones/Coches
-- ✅ CRUD Decodificadores
-- ✅ CRUD Proyectos de sonido
+- ✅ CRUD Locomotoras, Vagones/Coches, Decodificadores, Proyectos de sonido
 - ✅ CRUD Lista de Deseos + mover a colección
+- ✅ CRUD Composiciones con locomotora y vagones ordenados
 - ✅ Backup/Restore endpoints
 - ✅ JMRI Import endpoint
+- ✅ CSV Import endpoints con plantillas
 - ✅ PDF Export endpoints (catálogo, locomotoras, vagones)
-- ✅ Estadísticas completas incluyendo wishlist
+- ✅ Estadísticas completas incluyendo wishlist y compositions
 
 ### Frontend (React + Tailwind + Shadcn UI)
-- ✅ Dashboard con estadísticas y botón exportar catálogo PDF
-- ✅ Tablas ordenables en Locomotoras, Vagones y Wishlist (SortableHeader component)
-- ✅ Vista detallada con exportar PDF individual
-- ✅ Página Lista de Deseos con ordenamiento, edición y mover a colección
-- ✅ Formulario de wishlist con todos los campos
+- ✅ Dashboard con estadísticas y exportar catálogo PDF
+- ✅ Tablas ordenables con SortableHeader component
+- ✅ Composiciones: lista, formulario con drag&drop vagones, vista detallada visual
+- ✅ CSV Import: tabs locomotoras/vagones, subir archivo o pegar, resultados
+- ✅ Lista de Deseos completa
 
 ## Testing Status - 12/02/2026
-- Backend: 100% (14/14 pytest tests)
-- Frontend: 100% (sorting, PDF, wishlist flows)
-- Test file: /app/backend/tests/test_new_features.py
+- Backend: 100% (28+ pytest tests total)
+- Frontend: 100% 
+- Test files: 
+  - /app/backend/tests/test_new_features.py
+  - /app/backend/tests/test_compositions_csv.py
 
 ## Prioritized Backlog
 
@@ -77,14 +96,18 @@ Aplicación para PC para gestionar una colección de modelismo ferroviario (Esca
 - [x] Exportar catálogo a PDF
 - [x] Lista de deseos
 - [x] Ordenación de columnas
+- [x] Composiciones de trenes
+- [x] Importar desde CSV
 
 ### P1 - Next Features
-- [ ] Composiciones de trenes (locomotora + vagones)
-- [ ] Importar desde CSV
+- [ ] Historial de precios de compra
+- [ ] Estadísticas avanzadas (gráficos)
+- [ ] Filtros avanzados en Lista de Deseos
 
 ### P2 - Nice to Have
-- [ ] Historial de precios
-- [ ] Estadísticas avanzadas (gráficos)
+- [ ] Exportar composición a PDF
+- [ ] Búsqueda global
+- [ ] Modo oscuro
 
 ## Code Architecture
 ```
@@ -93,29 +116,34 @@ Aplicación para PC para gestionar una colección de modelismo ferroviario (Esca
 │   ├── server.py          # FastAPI app con todos los endpoints
 │   ├── tests/
 │   │   ├── test_jmri_import.py
-│   │   └── test_new_features.py  # Tests de sorting, PDF, wishlist
+│   │   ├── test_new_features.py
+│   │   └── test_compositions_csv.py
 │   └── .env
 ├── frontend/
 │   └── src/
 │       ├── lib/
-│       │   └── api.js     # Servicios API
+│       │   └── api.js
 │       ├── components/
 │       │   ├── Layout.jsx
-│       │   ├── SortableHeader.jsx  # Cabeceras ordenables
+│       │   ├── SortableHeader.jsx
 │       │   └── ui/
 │       └── pages/
-│           ├── Dashboard.jsx       # + Exportar catálogo PDF
-│           ├── Locomotives.jsx     # + Ordenamiento
-│           ├── LocomotiveDetail.jsx # + Exportar PDF
-│           ├── RollingStock.jsx    # + Ordenamiento
-│           ├── Wishlist.jsx        # CRUD + ordenamiento
-│           ├── WishlistForm.jsx
+│           ├── Dashboard.jsx
+│           ├── Locomotives.jsx
+│           ├── LocomotiveDetail.jsx
+│           ├── RollingStock.jsx
+│           ├── Compositions.jsx       # NEW
+│           ├── CompositionForm.jsx    # NEW
+│           ├── CompositionDetail.jsx  # NEW
+│           ├── CSVImport.jsx          # NEW
+│           ├── Wishlist.jsx
 │           └── ...
 └── memory/
     └── PRD.md
 ```
 
 ## API Endpoints
+### Core CRUD
 - `GET, POST /api/locomotives`
 - `GET, PUT, DELETE /api/locomotives/{id}`
 - `GET, POST /api/rolling-stock`
@@ -127,14 +155,26 @@ Aplicación para PC para gestionar una colección de modelismo ferroviario (Esca
 - `GET, POST /api/wishlist`
 - `GET, PUT, DELETE /api/wishlist/{id}`
 - `POST /api/wishlist/{id}/move-to-collection`
+
+### Compositions (NEW)
+- `GET, POST /api/compositions`
+- `GET, PUT, DELETE /api/compositions/{id}` (GET returns locomotive_details, wagons_details)
+
+### Import/Export
 - `GET /api/export/catalog/pdf`
 - `GET /api/export/locomotive/{id}/pdf`
 - `GET /api/export/rolling-stock/{id}/pdf`
 - `GET /api/backup`
 - `POST /api/restore`
 - `POST /api/import/jmri`
-- `GET /api/stats`
+- `POST /api/import/csv/locomotives` (NEW)
+- `POST /api/import/csv/rolling-stock` (NEW)
+- `GET /api/import/csv/template/locomotives` (NEW)
+- `GET /api/import/csv/template/rolling-stock` (NEW)
+
+### Stats
+- `GET /api/stats` (includes total_compositions)
 
 ## Next Tasks
-1. Composiciones de trenes (locomotora + vagones asociados)
-2. Importar colección desde CSV
+1. Historial de precios de compra
+2. Estadísticas avanzadas con gráficos
