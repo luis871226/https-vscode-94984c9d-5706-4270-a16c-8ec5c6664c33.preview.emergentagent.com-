@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Train, Cpu, Volume2, Euro, Plus, TrendingUp, TrainTrack } from "lucide-react";
-import { getStats, getLocomotives } from "../lib/api";
+import { Train, Cpu, Volume2, Euro, Plus, TrendingUp, TrainTrack, FileDown } from "lucide-react";
+import { getStats, getLocomotives, exportCatalogPDF } from "../lib/api";
 import { Button } from "../components/ui/button";
 
 const Dashboard = () => {
@@ -84,13 +84,25 @@ const Dashboard = () => {
   return (
     <div className="animate-fade-in" data-testid="dashboard">
       {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="font-heading text-4xl font-bold uppercase tracking-tight text-slate-900">
-          Dashboard
-        </h1>
-        <p className="font-mono text-sm text-slate-500 mt-1 uppercase tracking-wider">
-          Resumen de tu colección
-        </p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div>
+          <h1 className="font-heading text-4xl font-bold uppercase tracking-tight text-slate-900">
+            Dashboard
+          </h1>
+          <p className="font-mono text-sm text-slate-500 mt-1 uppercase tracking-wider">
+            Resumen de tu colección
+          </p>
+        </div>
+        <a href={exportCatalogPDF()} target="_blank" rel="noopener noreferrer">
+          <Button
+            variant="outline"
+            className="font-mono uppercase tracking-widest text-xs gap-2 border-slate-300"
+            data-testid="export-catalog-pdf-btn"
+          >
+            <FileDown className="w-4 h-4" />
+            Exportar Catálogo PDF
+          </Button>
+        </a>
       </div>
 
       {/* Stats Grid */}
