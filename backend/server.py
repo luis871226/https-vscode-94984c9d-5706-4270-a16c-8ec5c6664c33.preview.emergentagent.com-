@@ -1252,6 +1252,262 @@ async def export_rolling_stock_pdf(stock_id: str):
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
+# ============== COMPOSITION ENDPOINTS ==============
+
+@api_router.get("/compositions", response_model=List[Composition])
+async def get_compositions():
+    compositions = await db.compositions.find({}, {"_id": 0}).to_list(1000)
+    for comp in compositions:
+        if isinstance(comp.get('created_at'), str):
+            comp['created_at'] = datetime.fromisoformat(comp['created_at'])
+        if isinstance(comp.get('updated_at'), str):
+            comp['updated_at'] = datetime.fromisoformat(comp['updated_at'])
+    return compositions
+
+@api_router.get("/compositions/{composition_id}")
+async def get_composition(composition_id: str):
+    """Get a single composition with full locomotive and wagon details"""
+    comp = await db.compositions.find_one({"id": composition_id}, {"_id": 0})
+    if not comp:
+        raise HTTPException(status_code=404, detail="Composición no encontrada")
+    
+    # Fetch locomotive details if exists
+    locomotive = None
+    if comp.get('locomotive_id'):
+        locomotive = await db.locomotives.find_one({"id": comp['locomotive_id']}, {"_id": 0})
+    
+    # Fetch wagon details in order
+    wagons_details = []
+    for wagon_ref in sorted(comp.get('wagons', []), key=lambda x: x.get('position', 0)):
+        wagon = await db.rolling_stock.find_one({"id": wagon_ref['wagon_id']}, {"_id": 0})
+        if wagon:
+            wagon['position'] = wagon_ref['position']
+            wagons_details.append(wagon)
+    
+    return {
+        **comp,
+        "locomotive_details": locomotive,
+        "wagons_details": wagons_details
+    }
+
+@api_router.post("/compositions", response_model=Composition)
+async def create_composition(composition: CompositionCreate):
+    comp_dict = composition.model_dump()
+    comp_obj = Composition(**comp_dict)
+    doc = comp_obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    await db.compositions.insert_one(doc)
+    return comp_obj
+
+@api_router.put("/compositions/{composition_id}", response_model=Composition)
+async def update_composition(composition_id: str, composition: CompositionCreate):
+    existing = await db.compositions.find_one({"id": composition_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Composición no encontrada")
+    
+    update_data = composition.model_dump()
+    update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
+    update_data['id'] = composition_id
+    update_data['created_at'] = existing.get('created_at', datetime.now(timezone.utc).isoformat())
+    
+    await db.compositions.update_one({"id": composition_id}, {"$set": update_data})
+    
+    updated = await db.compositions.find_one({"id": composition_id}, {"_id": 0})
+    if isinstance(updated.get('created_at'), str):
+        updated['created_at'] = datetime.fromisoformat(updated['created_at'])
+    if isinstance(updated.get('updated_at'), str):
+        updated['updated_at'] = datetime.fromisoformat(updated['updated_at'])
+    return updated
+
+@api_router.delete("/compositions/{composition_id}")
+async def delete_composition(composition_id: str):
+    result = await db.compositions.delete_one({"id": composition_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Composición no encontrada")
+    return {"message": "Composición eliminada"}
+
+# ============== CSV IMPORT ENDPOINTS ==============
+import csv
+from io import StringIO
+
+@api_router.post("/import/csv/locomotives", response_model=CSVImportResult)
+async def import_locomotives_csv(csv_content: str):
+    """
+    Import locomotives from CSV content.
+    Expected columns: brand,model,reference,locomotive_type,dcc_address,decoder_brand,decoder_model,
+                     condition,era,railway_company,purchase_date,price,registration_number,notes
+    """
+    imported = []
+    skipped = 0
+    errors = []
+    
+    try:
+        reader = csv.DictReader(StringIO(csv_content))
+        required_fields = ['brand', 'model', 'reference', 'dcc_address']
+        
+        for i, row in enumerate(reader, start=2):  # Start at 2 (header is row 1)
+            try:
+                # Validate required fields
+                missing = [f for f in required_fields if not row.get(f, '').strip()]
+                if missing:
+                    skipped += 1
+                    errors.append(f"Fila {i}: Campos requeridos vacíos: {', '.join(missing)}")
+                    continue
+                
+                # Build locomotive data
+                loco_data = {
+                    'brand': row.get('brand', '').strip(),
+                    'model': row.get('model', '').strip(),
+                    'reference': row.get('reference', '').strip(),
+                    'locomotive_type': row.get('locomotive_type', 'diesel').strip() or 'diesel',
+                    'dcc_address': int(row.get('dcc_address', '3').strip() or '3'),
+                    'decoder_brand': row.get('decoder_brand', '').strip() or None,
+                    'decoder_model': row.get('decoder_model', '').strip() or None,
+                    'condition': row.get('condition', 'nuevo').strip() or 'nuevo',
+                    'era': row.get('era', '').strip() or None,
+                    'railway_company': row.get('railway_company', '').strip() or None,
+                    'purchase_date': row.get('purchase_date', '').strip() or None,
+                    'price': float(row['price'].strip()) if row.get('price', '').strip() else None,
+                    'registration_number': row.get('registration_number', '').strip() or None,
+                    'notes': row.get('notes', '').strip() or None,
+                    'functions': [],
+                    'cv_modifications': []
+                }
+                
+                loco_obj = Locomotive(**loco_data)
+                doc = loco_obj.model_dump()
+                doc['created_at'] = doc['created_at'].isoformat()
+                doc['updated_at'] = doc['updated_at'].isoformat()
+                await db.locomotives.insert_one(doc)
+                
+                imported.append({
+                    'brand': loco_data['brand'],
+                    'model': loco_data['model'],
+                    'reference': loco_data['reference']
+                })
+                
+            except ValueError as ve:
+                skipped += 1
+                errors.append(f"Fila {i}: Error de valor - {str(ve)}")
+            except Exception as e:
+                skipped += 1
+                errors.append(f"Fila {i}: {str(e)}")
+    
+    except Exception as e:
+        return CSVImportResult(
+            success=False,
+            imported_count=0,
+            skipped_count=0,
+            errors=[f"Error al procesar CSV: {str(e)}"],
+            imported_items=[]
+        )
+    
+    return CSVImportResult(
+        success=len(imported) > 0,
+        imported_count=len(imported),
+        skipped_count=skipped,
+        errors=errors,
+        imported_items=imported
+    )
+
+@api_router.post("/import/csv/rolling-stock", response_model=CSVImportResult)
+async def import_rolling_stock_csv(csv_content: str):
+    """
+    Import rolling stock from CSV content.
+    Expected columns: brand,model,reference,stock_type,condition,era,railway_company,purchase_date,price,notes
+    """
+    imported = []
+    skipped = 0
+    errors = []
+    
+    try:
+        reader = csv.DictReader(StringIO(csv_content))
+        required_fields = ['brand', 'model', 'reference']
+        
+        for i, row in enumerate(reader, start=2):
+            try:
+                missing = [f for f in required_fields if not row.get(f, '').strip()]
+                if missing:
+                    skipped += 1
+                    errors.append(f"Fila {i}: Campos requeridos vacíos: {', '.join(missing)}")
+                    continue
+                
+                stock_data = {
+                    'brand': row.get('brand', '').strip(),
+                    'model': row.get('model', '').strip(),
+                    'reference': row.get('reference', '').strip(),
+                    'stock_type': row.get('stock_type', 'vagon_mercancias').strip() or 'vagon_mercancias',
+                    'condition': row.get('condition', 'nuevo').strip() or 'nuevo',
+                    'era': row.get('era', '').strip() or None,
+                    'railway_company': row.get('railway_company', '').strip() or None,
+                    'purchase_date': row.get('purchase_date', '').strip() or None,
+                    'price': float(row['price'].strip()) if row.get('price', '').strip() else None,
+                    'notes': row.get('notes', '').strip() or None,
+                }
+                
+                stock_obj = RollingStock(**stock_data)
+                doc = stock_obj.model_dump()
+                doc['created_at'] = doc['created_at'].isoformat()
+                doc['updated_at'] = doc['updated_at'].isoformat()
+                await db.rolling_stock.insert_one(doc)
+                
+                imported.append({
+                    'brand': stock_data['brand'],
+                    'model': stock_data['model'],
+                    'reference': stock_data['reference']
+                })
+                
+            except ValueError as ve:
+                skipped += 1
+                errors.append(f"Fila {i}: Error de valor - {str(ve)}")
+            except Exception as e:
+                skipped += 1
+                errors.append(f"Fila {i}: {str(e)}")
+    
+    except Exception as e:
+        return CSVImportResult(
+            success=False,
+            imported_count=0,
+            skipped_count=0,
+            errors=[f"Error al procesar CSV: {str(e)}"],
+            imported_items=[]
+        )
+    
+    return CSVImportResult(
+        success=len(imported) > 0,
+        imported_count=len(imported),
+        skipped_count=skipped,
+        errors=errors,
+        imported_items=imported
+    )
+
+@api_router.get("/import/csv/template/locomotives")
+async def get_locomotives_csv_template():
+    """Get CSV template for locomotive import"""
+    template = "brand,model,reference,locomotive_type,dcc_address,decoder_brand,decoder_model,condition,era,railway_company,purchase_date,price,registration_number,notes\n"
+    template += "Arnold,Ferrobus 591,HN2351,automotor,71,ESU,LokSound 5 micro,nuevo,V,RENFE,2024-01-15,199.90,591-531-9,Importado desde tienda\n"
+    template += "Roco,Serie 252,73692,electrica,52,Lenz,Standard+,nuevo,VI,Renfe Operadora,2024-02-20,289.00,252-017-3,\n"
+    
+    return StreamingResponse(
+        iter([template]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=plantilla_locomotoras.csv"}
+    )
+
+@api_router.get("/import/csv/template/rolling-stock")
+async def get_rolling_stock_csv_template():
+    """Get CSV template for rolling stock import"""
+    template = "brand,model,reference,stock_type,condition,era,railway_company,purchase_date,price,notes\n"
+    template += "Roco,Talgo III,64211,coche_viajeros,nuevo,V,RENFE,2024-01-10,45.99,Primera clase\n"
+    template += "Arnold,Vagón Tolva,HN6483,vagon_mercancias,nuevo,IV,RENFE,2024-03-05,32.50,\n"
+    
+    return StreamingResponse(
+        iter([template]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=plantilla_vagones.csv"}
+    )
+
 # Include the router in the main app
 app.include_router(api_router)
 
