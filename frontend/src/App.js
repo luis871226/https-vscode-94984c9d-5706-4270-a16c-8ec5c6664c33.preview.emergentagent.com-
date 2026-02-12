@@ -16,6 +16,10 @@ import BackupRestore from "./pages/BackupRestore";
 import JMRIImport from "./pages/JMRIImport";
 import Wishlist from "./pages/Wishlist";
 import WishlistForm from "./pages/WishlistForm";
+import Compositions from "./pages/Compositions";
+import CompositionForm from "./pages/CompositionForm";
+import CompositionDetail from "./pages/CompositionDetail";
+import CSVImport from "./pages/CSVImport";
 import "@/App.css";
 
 function App() {
@@ -42,8 +46,13 @@ function App() {
             <Route path="wishlist" element={<Wishlist />} />
             <Route path="wishlist/new" element={<WishlistForm />} />
             <Route path="wishlist/:id/edit" element={<WishlistForm />} />
+            <Route path="compositions" element={<Compositions />} />
+            <Route path="compositions/new" element={<CompositionForm />} />
+            <Route path="compositions/:id" element={<CompositionDetail />} />
+            <Route path="compositions/:id/edit" element={<CompositionForm />} />
             <Route path="backup" element={<BackupRestore />} />
             <Route path="jmri-import" element={<JMRIImport />} />
+            <Route path="csv-import" element={<CSVImport />} />
           </Route>
         </Routes>
       </BrowserRouter>
