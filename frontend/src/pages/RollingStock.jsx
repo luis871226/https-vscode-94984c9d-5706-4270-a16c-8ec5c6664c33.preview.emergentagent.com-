@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { TrainTrack, Plus, Search, Filter, Trash2, Edit, Eye } from "lucide-react";
 import { getRollingStock, deleteRollingStock } from "../lib/api";
@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
 } from "../components/ui/alert-dialog";
 import { toast } from "sonner";
+import SortableHeader from "../components/SortableHeader";
 
 const stockTypeLabels = {
   vagon_mercancias: "Vagón Mercancías",
@@ -33,18 +34,18 @@ const stockTypeLabels = {
 const RollingStock = () => {
   const navigate = useNavigate();
   const [stock, setStock] = useState([]);
-  const [filteredStock, setFilteredStock] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterCondition, setFilterCondition] = useState("all");
   const [deleteId, setDeleteId] = useState(null);
+  const [sortKey, setSortKey] = useState("brand");
+  const [sortDirection, setSortDirection] = useState("asc");
 
   const fetchStock = async () => {
     try {
       const response = await getRollingStock();
       setStock(response.data);
-      setFilteredStock(response.data);
     } catch (error) {
       console.error("Error fetching rolling stock:", error);
       toast.error("Error al cargar los vagones/coches");
@@ -57,7 +58,12 @@ const RollingStock = () => {
     fetchStock();
   }, []);
 
-  useEffect(() => {
+  const handleSort = (key, direction) => {
+    setSortKey(key);
+    setSortDirection(direction);
+  };
+
+  const filteredStock = useMemo(() => {
     let filtered = [...stock];
 
     if (searchTerm) {
@@ -79,8 +85,26 @@ const RollingStock = () => {
       filtered = filtered.filter((item) => item.condition === filterCondition);
     }
 
-    setFilteredStock(filtered);
-  }, [searchTerm, filterType, filterCondition, stock]);
+    // Sort
+    filtered.sort((a, b) => {
+      let aVal = a[sortKey];
+      let bVal = b[sortKey];
+      
+      if (sortKey === "price") {
+        aVal = aVal || 0;
+        bVal = bVal || 0;
+      } else {
+        aVal = (aVal || "").toString().toLowerCase();
+        bVal = (bVal || "").toString().toLowerCase();
+      }
+
+      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [stock, searchTerm, filterType, filterCondition, sortKey, sortDirection]);
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -186,13 +210,27 @@ const RollingStock = () => {
             <thead>
               <tr>
                 <th className="text-left">Foto</th>
-                <th className="text-left">Marca / Modelo</th>
-                <th className="text-left">Referencia</th>
-                <th className="text-left">Tipo</th>
-                <th className="text-left">Compañía</th>
-                <th className="text-left">Época</th>
-                <th className="text-left">Estado</th>
-                <th className="text-right">Precio</th>
+                <th className="text-left">
+                  <SortableHeader label="Marca / Modelo" sortKey="brand" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                </th>
+                <th className="text-left">
+                  <SortableHeader label="Referencia" sortKey="reference" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                </th>
+                <th className="text-left">
+                  <SortableHeader label="Tipo" sortKey="stock_type" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                </th>
+                <th className="text-left">
+                  <SortableHeader label="Compañía" sortKey="railway_company" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                </th>
+                <th className="text-left">
+                  <SortableHeader label="Época" sortKey="era" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                </th>
+                <th className="text-left">
+                  <SortableHeader label="Estado" sortKey="condition" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                </th>
+                <th className="text-right">
+                  <SortableHeader label="Precio" sortKey="price" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} className="justify-end" />
+                </th>
                 <th className="text-center">Acciones</th>
               </tr>
             </thead>
