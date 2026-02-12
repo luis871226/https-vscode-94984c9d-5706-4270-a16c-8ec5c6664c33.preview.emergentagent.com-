@@ -13,6 +13,7 @@ import DecoderForm from "./pages/DecoderForm";
 import SoundProjects from "./pages/SoundProjects";
 import SoundProjectForm from "./pages/SoundProjectForm";
 import BackupRestore from "./pages/BackupRestore";
+import JMRIImport from "./pages/JMRIImport";
 import "@/App.css";
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
             <Route path="sound-projects/new" element={<SoundProjectForm />} />
             <Route path="sound-projects/:id/edit" element={<SoundProjectForm />} />
             <Route path="backup" element={<BackupRestore />} />
+            <Route path="jmri-import" element={<JMRIImport />} />
           </Route>
         </Routes>
       </BrowserRouter>
