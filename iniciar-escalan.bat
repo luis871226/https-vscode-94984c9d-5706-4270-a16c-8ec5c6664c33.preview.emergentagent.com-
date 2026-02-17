@@ -5,30 +5,24 @@ color 0A
 echo.
 echo  ========================================
 echo     escalaN.es Coleccion
-echo     Sistema de Gestion de Trenes
+echo     Sistema de Gestion de Trenes N
 echo  ========================================
 echo.
 
-:: Configurar rutas (EDITA ESTAS RUTAS SEGUN TU PC)
+:: Configurar rutas
 set APP_DIR=%~dp0
 set BACKEND_DIR=%APP_DIR%backend
 set FRONTEND_DIR=%APP_DIR%frontend
+set MONGO_PATH="C:\Program Files\MongoDB\Server\8.2\bin\mongod.exe"
 
-echo [1/4] Verificando MongoDB...
-:: Verificar si MongoDB esta corriendo
-tasklist /FI "IMAGENAME eq mongod.exe" 2>NUL | find /I /N "mongod.exe">NUL
-if "%ERRORLEVEL%"=="0" (
-    echo       MongoDB ya esta corriendo
-) else (
-    echo       Iniciando MongoDB...
-    start "MongoDB" cmd /k "mongod --dbpath C:\data\db"
-    timeout /t 3 >nul
-)
+echo [1/4] Iniciando MongoDB...
+start "MongoDB - escalaN.es" cmd /k "%MONGO_PATH% --dbpath C:\data\db"
+timeout /t 5 >nul
 
 echo.
 echo [2/4] Iniciando Backend (FastAPI)...
 cd /d "%BACKEND_DIR%"
-start "Backend - escalaN.es" cmd /k "call venv\Scripts\activate && uvicorn server:app --host 0.0.0.0 --port 8001 --reload"
+start "Backend - escalaN.es" cmd /k "venv\Scripts\activate && uvicorn server:app --host 0.0.0.0 --port 8001 --reload"
 timeout /t 5 >nul
 
 echo.
@@ -47,10 +41,15 @@ echo  ========================================
 echo     APLICACION INICIADA
 echo  ========================================
 echo.
-echo  Abre tu navegador en: http://localhost:3000
+echo  La aplicacion se abrira en: http://localhost:3000
 echo.
-echo  Para cerrar la aplicacion, cierra todas
-echo  las ventanas de comandos abiertas.
+echo  Se han abierto 3 ventanas de comandos:
+echo    - MongoDB (base de datos)
+echo    - Backend (servidor API)
+echo    - Frontend (interfaz web)
+echo.
+echo  Para cerrar la aplicacion, ejecuta:
+echo    cerrar-escalan.bat
 echo.
 echo  Presiona cualquier tecla para cerrar esta ventana...
 pause >nul
