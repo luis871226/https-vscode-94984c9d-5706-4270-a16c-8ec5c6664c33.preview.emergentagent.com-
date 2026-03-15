@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Train, Plus, Search, Filter, Trash2, Edit, Eye } from "lucide-react";
-import { getLocomotives, deleteLocomotive } from "../lib/api";
+import { Train, Plus, Search, Filter, Trash2, Edit, Eye, FileDown } from "lucide-react";
+import { getLocomotives, deleteLocomotive, exportLocomotivesPDF } from "../lib/api";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import {
@@ -144,15 +144,27 @@ const Locomotives = () => {
             {filteredLocomotives.length} de {locomotives.length} locomotoras
           </p>
         </div>
-        <Link to="/locomotives/new">
-          <Button 
-            className="bg-red-600 hover:bg-red-700 font-mono uppercase tracking-widest text-xs gap-2"
-            data-testid="new-locomotive-btn"
-          >
-            <Plus className="w-4 h-4" />
-            Nueva Locomotora
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <a href={exportLocomotivesPDF(sortKey, sortDirection)} target="_blank" rel="noopener noreferrer">
+            <Button 
+              variant="outline"
+              className="font-mono uppercase tracking-widest text-xs gap-2 border-slate-300"
+              data-testid="export-locomotives-pdf-btn"
+            >
+              <FileDown className="w-4 h-4" />
+              Exportar PDF
+            </Button>
+          </a>
+          <Link to="/locomotives/new">
+            <Button 
+              className="bg-red-600 hover:bg-red-700 font-mono uppercase tracking-widest text-xs gap-2"
+              data-testid="new-locomotive-btn"
+            >
+              <Plus className="w-4 h-4" />
+              Nueva Locomotora
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}

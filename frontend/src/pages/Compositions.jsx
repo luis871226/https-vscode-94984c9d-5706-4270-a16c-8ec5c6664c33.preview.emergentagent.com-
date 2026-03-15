@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getCompositions, deleteComposition, duplicateComposition } from '../lib/api';
+import { getCompositions, deleteComposition, duplicateComposition, exportCompositionsPDF } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { useToast } from '../hooks/use-toast';
-import { Plus, Trash2, Edit, Eye, Train, TrainTrack, Layers, Copy } from 'lucide-react';
+import { Plus, Trash2, Edit, Eye, Train, TrainTrack, Layers, Copy, FileDown } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -91,15 +91,27 @@ export default function Compositions() {
             {compositions.length} composiciones de trenes
           </p>
         </div>
-        <Link to="/compositions/new">
-          <Button 
-            className="bg-purple-600 hover:bg-purple-700 font-mono uppercase tracking-widest text-xs gap-2"
-            data-testid="new-composition-btn"
-          >
-            <Plus className="w-4 h-4" />
-            Nueva Composición
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <a href={exportCompositionsPDF()} target="_blank" rel="noopener noreferrer">
+            <Button 
+              variant="outline"
+              className="font-mono uppercase tracking-widest text-xs gap-2 border-slate-300"
+              data-testid="export-compositions-pdf-btn"
+            >
+              <FileDown className="w-4 h-4" />
+              Exportar PDF
+            </Button>
+          </a>
+          <Link to="/compositions/new">
+            <Button 
+              className="bg-purple-600 hover:bg-purple-700 font-mono uppercase tracking-widest text-xs gap-2"
+              data-testid="new-composition-btn"
+            >
+              <Plus className="w-4 h-4" />
+              Nueva Composición
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {compositions.length === 0 ? (

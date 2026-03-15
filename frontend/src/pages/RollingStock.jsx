@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { TrainTrack, Plus, Search, Filter, Trash2, Edit, Eye } from "lucide-react";
-import { getRollingStock, deleteRollingStock } from "../lib/api";
+import { TrainTrack, Plus, Search, Filter, Trash2, Edit, Eye, FileDown } from "lucide-react";
+import { getRollingStock, deleteRollingStock, exportRollingStockPDF } from "../lib/api";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import {
@@ -146,15 +146,27 @@ const RollingStock = () => {
             {filteredStock.length} de {stock.length} unidades
           </p>
         </div>
-        <Link to="/rolling-stock/new">
-          <Button 
-            className="bg-green-600 hover:bg-green-700 font-mono uppercase tracking-widest text-xs gap-2"
-            data-testid="new-rolling-stock-btn"
-          >
-            <Plus className="w-4 h-4" />
-            Nuevo Vagón/Coche
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <a href={exportRollingStockPDF(sortKey, sortDirection)} target="_blank" rel="noopener noreferrer">
+            <Button 
+              variant="outline"
+              className="font-mono uppercase tracking-widest text-xs gap-2 border-slate-300"
+              data-testid="export-rolling-stock-pdf-btn"
+            >
+              <FileDown className="w-4 h-4" />
+              Exportar PDF
+            </Button>
+          </a>
+          <Link to="/rolling-stock/new">
+            <Button 
+              className="bg-green-600 hover:bg-green-700 font-mono uppercase tracking-widest text-xs gap-2"
+              data-testid="new-rolling-stock-btn"
+            >
+              <Plus className="w-4 h-4" />
+              Nuevo Vagón/Coche
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}

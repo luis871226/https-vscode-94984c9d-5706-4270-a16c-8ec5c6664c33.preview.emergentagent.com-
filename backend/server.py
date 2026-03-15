@@ -1108,6 +1108,219 @@ async def export_catalog_pdf(
         headers={"Content-Disposition": f"attachment; filename=catalogo_{datetime.now().strftime('%Y%m%d')}.pdf"}
     )
 
+@api_router.get("/export/locomotives/pdf")
+async def export_locomotives_pdf(
+    sort_field: str = "brand",
+    sort_order: str = "asc"
+):
+    """Export only locomotives to PDF with custom sorting"""
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=1*cm, leftMargin=1*cm, topMargin=1*cm, bottomMargin=1*cm)
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=18, spaceAfter=20, alignment=1)
+    subtitle_style = ParagraphStyle('Subtitle', parent=styles['Heading2'], fontSize=14, spaceAfter=10)
+    
+    # Title
+    elements.append(Paragraph("Catálogo de Locomotoras", title_style))
+    elements.append(Paragraph(f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
+    elements.append(Paragraph(f"Ordenado por: {sort_field} ({sort_order})", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # Locomotives with sorting
+    sort_direction = 1 if sort_order == "asc" else -1
+    locomotives = await db.locomotives.find({}, {"_id": 0}).sort(sort_field, sort_direction).to_list(1000)
+    
+    if locomotives:
+        elements.append(Paragraph(f"Locomotoras ({len(locomotives)})", subtitle_style))
+        table_data = [['Marca', 'Modelo', 'Referencia', 'DCC', 'Tipo', 'Era', 'Precio']]
+        for loco in locomotives:
+            table_data.append([
+                loco.get('brand', '')[:15],
+                loco.get('model', '')[:20],
+                loco.get('reference', '')[:12],
+                str(loco.get('dcc_address', ''))[:8],
+                loco.get('locomotive_type', '')[:12],
+                loco.get('era', '')[:5],
+                f"{loco.get('price', 0) or 0:.2f}€"
+            ])
+        
+        table = Table(table_data, colWidths=[2.5*cm, 4*cm, 2.5*cm, 2*cm, 2.5*cm, 1.5*cm, 2*cm])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 9),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+        ]))
+        elements.append(table)
+        
+        # Summary
+        total_value = sum(loco.get('price', 0) or 0 for loco in locomotives)
+        elements.append(Spacer(1, 20))
+        elements.append(Paragraph(f"Total: {len(locomotives)} locomotoras - Valor: {total_value:.2f}€", styles['Normal']))
+    
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=locomotoras_{datetime.now().strftime('%Y%m%d')}.pdf"}
+    )
+
+@api_router.get("/export/rolling-stock/pdf")
+async def export_rolling_stock_pdf(
+    sort_field: str = "brand",
+    sort_order: str = "asc"
+):
+    """Export only rolling stock to PDF with custom sorting"""
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=1*cm, leftMargin=1*cm, topMargin=1*cm, bottomMargin=1*cm)
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=18, spaceAfter=20, alignment=1)
+    subtitle_style = ParagraphStyle('Subtitle', parent=styles['Heading2'], fontSize=14, spaceAfter=10)
+    
+    # Title
+    elements.append(Paragraph("Catálogo de Vagones y Coches", title_style))
+    elements.append(Paragraph(f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
+    elements.append(Paragraph(f"Ordenado por: {sort_field} ({sort_order})", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # Rolling stock with sorting
+    sort_direction = 1 if sort_order == "asc" else -1
+    rolling_stock = await db.rolling_stock.find({}, {"_id": 0}).sort(sort_field, sort_direction).to_list(1000)
+    
+    if rolling_stock:
+        elements.append(Paragraph(f"Vagones y Coches ({len(rolling_stock)})", subtitle_style))
+        table_data = [['Marca', 'Modelo', 'Referencia', 'Matrícula', 'Tipo', 'Era', 'Precio']]
+        for stock in rolling_stock:
+            table_data.append([
+                stock.get('brand', '')[:15],
+                stock.get('model', '')[:18],
+                stock.get('reference', '')[:12],
+                stock.get('registration_number', '')[:12],
+                stock.get('stock_type', '')[:12],
+                stock.get('era', '')[:5],
+                f"{stock.get('price', 0) or 0:.2f}€"
+            ])
+        
+        table = Table(table_data, colWidths=[2.5*cm, 3.5*cm, 2.5*cm, 2.5*cm, 2.5*cm, 1.5*cm, 2*cm])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.darkgreen),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 9),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+        ]))
+        elements.append(table)
+        
+        # Summary
+        total_value = sum(stock.get('price', 0) or 0 for stock in rolling_stock)
+        elements.append(Spacer(1, 20))
+        elements.append(Paragraph(f"Total: {len(rolling_stock)} unidades - Valor: {total_value:.2f}€", styles['Normal']))
+    
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=vagones_{datetime.now().strftime('%Y%m%d')}.pdf"}
+    )
+
+@api_router.get("/export/compositions/pdf")
+async def export_compositions_pdf():
+    """Export all compositions to PDF"""
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=1*cm, leftMargin=1*cm, topMargin=1*cm, bottomMargin=1*cm)
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=18, spaceAfter=20, alignment=1)
+    subtitle_style = ParagraphStyle('Subtitle', parent=styles['Heading2'], fontSize=14, spaceAfter=10)
+    comp_style = ParagraphStyle('CompTitle', parent=styles['Heading3'], fontSize=12, spaceBefore=15, spaceAfter=5, textColor=colors.darkblue)
+    
+    # Title
+    elements.append(Paragraph("Catálogo de Composiciones", title_style))
+    elements.append(Paragraph(f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # Get all compositions
+    compositions = await db.compositions.find({}, {"_id": 0}).to_list(100)
+    
+    if compositions:
+        elements.append(Paragraph(f"Composiciones ({len(compositions)})", subtitle_style))
+        
+        for comp in compositions:
+            # Composition header
+            elements.append(Paragraph(f"{comp.get('name', 'Sin nombre')}", comp_style))
+            
+            # Info
+            info_data = [
+                ['Tipo de Servicio', comp.get('service_type', '-')],
+                ['Época', comp.get('era', '-')],
+            ]
+            
+            # Get locomotive info
+            loco_id = comp.get('locomotive')
+            if loco_id:
+                loco = await db.locomotives.find_one({"id": loco_id}, {"_id": 0})
+                if loco:
+                    info_data.append(['Locomotora', f"{loco.get('brand', '')} {loco.get('model', '')}"])
+            
+            # Rolling stock count
+            rolling_stock_ids = comp.get('rolling_stock', [])
+            info_data.append(['Vagones/Coches', str(len(rolling_stock_ids))])
+            
+            info_table = Table(info_data, colWidths=[4*cm, 10*cm])
+            info_table.setStyle(TableStyle([
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('TEXTCOLOR', (0, 0), (0, -1), colors.grey),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ]))
+            elements.append(info_table)
+            
+            # List rolling stock
+            if rolling_stock_ids:
+                stock_items = []
+                for stock_id in rolling_stock_ids:
+                    stock = await db.rolling_stock.find_one({"id": stock_id}, {"_id": 0})
+                    if stock:
+                        stock_items.append(f"• {stock.get('brand', '')} {stock.get('model', '')} ({stock.get('reference', '')})")
+                if stock_items:
+                    elements.append(Paragraph("Material rodante:", styles['Normal']))
+                    for item in stock_items:
+                        elements.append(Paragraph(item, styles['Normal']))
+            
+            elements.append(Spacer(1, 10))
+        
+        # Summary
+        elements.append(Spacer(1, 10))
+        elements.append(Paragraph(f"Total: {len(compositions)} composiciones", styles['Normal']))
+    else:
+        elements.append(Paragraph("No hay composiciones registradas", styles['Normal']))
+    
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=composiciones_{datetime.now().strftime('%Y%m%d')}.pdf"}
+    )
+
 @api_router.get("/export/locomotive/{locomotive_id}/pdf")
 async def export_locomotive_pdf(locomotive_id: str):
     """Export individual locomotive data sheet to PDF"""
