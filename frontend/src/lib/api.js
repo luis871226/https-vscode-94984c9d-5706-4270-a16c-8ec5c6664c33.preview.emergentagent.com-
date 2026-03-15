@@ -61,7 +61,8 @@ export const moveWishlistToCollection = (id, purchaseDate, price) =>
   });
 
 // PDF Export
-export const exportCatalogPDF = () => `${API}/export/catalog/pdf`;
+export const exportCatalogPDF = (locoSortField = 'brand', locoSortOrder = 'asc', stockSortField = 'brand', stockSortOrder = 'asc') => 
+  `${API}/export/catalog/pdf?loco_sort_field=${locoSortField}&loco_sort_order=${locoSortOrder}&stock_sort_field=${stockSortField}&stock_sort_order=${stockSortOrder}`;
 export const exportLocomotivePDF = (id) => `${API}/export/locomotive/${id}/pdf`;
 export const exportRollingStockPDF = (id) => `${API}/export/rolling-stock/${id}/pdf`;
 

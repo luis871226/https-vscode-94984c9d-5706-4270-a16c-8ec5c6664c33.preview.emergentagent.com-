@@ -46,8 +46,8 @@ class LocomotiveBase(BaseModel):
     paint_scheme: Optional[str] = None  # Esquema de pintura
     registration_number: Optional[str] = None  # Matrícula/Número
     prototype_type: Optional[str] = None  # Tipo de prototipo
-    # DCC fields
-    dcc_address: int
+    # DCC fields - puede ser número o "Analógico"
+    dcc_address: str = "3"  # Puede ser número o "Analógico"
     decoder_brand: Optional[str] = None
     decoder_model: Optional[str] = None
     sound_project: Optional[str] = None
@@ -68,6 +68,7 @@ class RollingStockBase(BaseModel):
     model: str
     reference: str
     stock_type: str = "vagon_mercancias"  # vagon_mercancias, coche_viajeros, furgon, otro
+    registration_number: Optional[str] = None  # Matrícula del vagón/coche
     purchase_date: Optional[str] = None
     price: Optional[float] = None
     condition: str = "nuevo"  # nuevo, usado, restaurado
@@ -978,8 +979,13 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.units import mm, cm
 
 @api_router.get("/export/catalog/pdf")
-async def export_catalog_pdf():
-    """Export complete catalog (locomotives and rolling stock) to PDF"""
+async def export_catalog_pdf(
+    loco_sort_field: str = "brand",
+    loco_sort_order: str = "asc",
+    stock_sort_field: str = "brand",
+    stock_sort_order: str = "asc"
+):
+    """Export complete catalog (locomotives and rolling stock) to PDF with custom sorting"""
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=1*cm, leftMargin=1*cm, topMargin=1*cm, bottomMargin=1*cm)
     elements = []
@@ -993,8 +999,9 @@ async def export_catalog_pdf():
     elements.append(Paragraph(f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
     elements.append(Spacer(1, 20))
     
-    # Locomotives section
-    locomotives = await db.locomotives.find({}, {"_id": 0}).to_list(1000)
+    # Locomotives section - with sorting
+    loco_sort_direction = 1 if loco_sort_order == "asc" else -1
+    locomotives = await db.locomotives.find({}, {"_id": 0}).sort(loco_sort_field, loco_sort_direction).to_list(1000)
     if locomotives:
         elements.append(Paragraph(f"Locomotoras ({len(locomotives)})", subtitle_style))
         
@@ -1027,23 +1034,25 @@ async def export_catalog_pdf():
         elements.append(table)
         elements.append(Spacer(1, 20))
     
-    # Rolling Stock section
-    rolling_stock = await db.rolling_stock.find({}, {"_id": 0}).to_list(1000)
+    # Rolling Stock section - with sorting
+    stock_sort_direction = 1 if stock_sort_order == "asc" else -1
+    rolling_stock = await db.rolling_stock.find({}, {"_id": 0}).sort(stock_sort_field, stock_sort_direction).to_list(1000)
     if rolling_stock:
         elements.append(Paragraph(f"Material Rodante ({len(rolling_stock)})", subtitle_style))
         
-        table_data = [['Marca', 'Modelo', 'Referencia', 'Tipo', 'Era', 'Precio']]
+        table_data = [['Marca', 'Modelo', 'Referencia', 'Matrícula', 'Tipo', 'Era', 'Precio']]
         for stock in rolling_stock:
             table_data.append([
                 stock.get('brand', '')[:15],
-                stock.get('model', '')[:25],
-                stock.get('reference', '')[:15],
-                stock.get('stock_type', '')[:15],
+                stock.get('model', '')[:20],
+                stock.get('reference', '')[:12],
+                stock.get('registration_number', '')[:12],
+                stock.get('stock_type', '')[:12],
                 stock.get('era', '')[:8],
                 f"{stock.get('price', 0) or 0:.2f}€"
             ])
         
-        table = Table(table_data, colWidths=[3*cm, 5*cm, 3*cm, 3*cm, 1.5*cm, 2*cm])
+        table = Table(table_data, colWidths=[2.5*cm, 4*cm, 2.5*cm, 2.5*cm, 2.5*cm, 1.5*cm, 2*cm])
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.darkgreen),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),

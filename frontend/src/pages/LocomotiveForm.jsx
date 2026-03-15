@@ -34,7 +34,7 @@ const LocomotiveForm = () => {
     registration_number: "",
     prototype_type: "",
     // DCC
-    dcc_address: 3,
+    dcc_address: "3",
     decoder_brand: "",
     decoder_model: "",
     sound_project: "",
@@ -163,7 +163,7 @@ const LocomotiveForm = () => {
     try {
       const dataToSend = {
         ...formData,
-        dcc_address: parseInt(formData.dcc_address) || 3,
+        dcc_address: formData.dcc_address || "3",
         price: formData.price ? parseFloat(formData.price) : null,
       };
 
@@ -193,7 +193,6 @@ const LocomotiveForm = () => {
     { value: "alta_velocidad", label: "Alta Velocidad" },
     { value: "otro", label: "Otro" },
   ];
-  const railwayCompanies = ["RENFE", "DB", "SNCF", "FS", "OBB", "SBB", "NS", "NMBS/SNCB", "CP", "DSB", "NSB", "VR", "PKP", "CD", "MAV", "CFR", "BDZ", "TCDD", "JR", "Amtrak", "CN", "CP Rail", "Otra"];
 
   if (loading) {
     return (
@@ -331,15 +330,15 @@ const LocomotiveForm = () => {
               <label className="railway-label">Dirección DCC *</label>
               <Input
                 name="dcc_address"
-                type="number"
-                min="1"
-                max="9999"
+                type="text"
                 value={formData.dcc_address}
                 onChange={handleChange}
                 required
                 className="railway-input w-full"
+                placeholder="Ej: 3 o Analógico"
                 data-testid="input-dcc-address"
               />
+              <span className="text-xs text-slate-500 mt-1 block">Número (1-9999) o "Analógico"</span>
             </div>
             <div>
               <label className="railway-label">Marca Decodificador</label>
@@ -453,22 +452,14 @@ const LocomotiveForm = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             <div>
               <label className="railway-label">Compañía Ferroviaria</label>
-              <Select
-                value={formData.railway_company || "none"}
-                onValueChange={(value) => handleSelectChange("railway_company", value === "none" ? "" : value)}
-              >
-                <SelectTrigger className="railway-input" data-testid="select-railway-company">
-                  <SelectValue placeholder="Seleccionar..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sin especificar</SelectItem>
-                  {railwayCompanies.map((company) => (
-                    <SelectItem key={company} value={company}>
-                      {company}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                name="railway_company"
+                value={formData.railway_company}
+                onChange={handleChange}
+                className="railway-input w-full"
+                placeholder="Ej: RENFE, DB, SNCF..."
+                data-testid="input-railway-company"
+              />
             </div>
           </div>
         </fieldset>

@@ -73,6 +73,7 @@ const RollingStock = () => {
           item.brand?.toLowerCase().includes(term) ||
           item.model?.toLowerCase().includes(term) ||
           item.reference?.toLowerCase().includes(term) ||
+          item.registration_number?.toLowerCase().includes(term) ||
           item.railway_company?.toLowerCase().includes(term)
       );
     }
@@ -217,6 +218,9 @@ const RollingStock = () => {
                   <SortableHeader label="Referencia" sortKey="reference" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
                 </th>
                 <th className="text-left">
+                  <SortableHeader label="Matrícula" sortKey="registration_number" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                </th>
+                <th className="text-left">
                   <SortableHeader label="Tipo" sortKey="stock_type" currentSort={sortKey} currentDirection={sortDirection} onSort={handleSort} />
                 </th>
                 <th className="text-left">
@@ -260,6 +264,7 @@ const RollingStock = () => {
                     <span className="text-slate-500 text-xs">{item.model}</span>
                   </td>
                   <td className="text-slate-600">{item.reference}</td>
+                  <td className="text-slate-600 text-xs">{item.registration_number || "-"}</td>
                   <td>
                     <span className="bg-green-50 text-green-700 px-2 py-0.5 text-xs uppercase font-mono">
                       {stockTypeLabels[item.stock_type] || item.stock_type}

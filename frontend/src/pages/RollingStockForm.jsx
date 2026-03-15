@@ -27,6 +27,7 @@ const RollingStockForm = () => {
     model: "",
     reference: "",
     stock_type: "coche_viajeros",
+    registration_number: "",
     purchase_date: "",
     price: "",
     condition: "nuevo",
@@ -46,6 +47,7 @@ const RollingStockForm = () => {
             ...item,
             price: item.price || "",
             purchase_date: item.purchase_date || "",
+            registration_number: item.registration_number || "",
           });
         } catch (error) {
           console.error("Error fetching data:", error);
@@ -116,7 +118,6 @@ const RollingStockForm = () => {
     { value: "furgon", label: "Furgón" },
     { value: "otro", label: "Otro" },
   ];
-  const railwayCompanies = ["RENFE", "DB", "SNCF", "FS", "OBB", "SBB", "NS", "NMBS/SNCB", "CP", "DSB", "NSB", "VR", "PKP", "CD", "MAV", "CFR", "BDZ", "TCDD", "JR", "Amtrak", "CN", "CP Rail", "Otra"];
 
   if (loading) {
     return (
@@ -183,6 +184,17 @@ const RollingStockForm = () => {
                 className="railway-input w-full"
                 placeholder="Ej: 64211"
                 data-testid="input-reference"
+              />
+            </div>
+            <div>
+              <label className="railway-label">Matrícula</label>
+              <Input
+                name="registration_number"
+                value={formData.registration_number}
+                onChange={handleChange}
+                className="railway-input w-full"
+                placeholder="Ej: 21 71 024 2 108-5"
+                data-testid="input-registration-number"
               />
             </div>
             <div>
@@ -274,22 +286,14 @@ const RollingStockForm = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             <div>
               <label className="railway-label">Compañía Ferroviaria</label>
-              <Select
-                value={formData.railway_company || "none"}
-                onValueChange={(value) => handleSelectChange("railway_company", value === "none" ? "" : value)}
-              >
-                <SelectTrigger className="railway-input" data-testid="select-railway-company">
-                  <SelectValue placeholder="Seleccionar..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sin especificar</SelectItem>
-                  {railwayCompanies.map((company) => (
-                    <SelectItem key={company} value={company}>
-                      {company}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                name="railway_company"
+                value={formData.railway_company}
+                onChange={handleChange}
+                className="railway-input w-full"
+                placeholder="Ej: RENFE, DB, SNCF..."
+                data-testid="input-railway-company"
+              />
             </div>
           </div>
         </fieldset>
