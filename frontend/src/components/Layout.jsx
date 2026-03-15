@@ -78,7 +78,7 @@ const Layout = () => {
       <footer className="bg-white border-t border-slate-200 py-4">
         <div className="max-w-7xl mx-auto px-6">
           <p className="font-mono text-xs text-slate-400 text-center uppercase tracking-widest">
-            escalaN.es Colección &bull; Sistema de Gestión Digital
+            escalaN.es Colección &bull; Sistema de Gestión Digital &bull; App gratuita no comercial
           </p>
         </div>
       </footer>

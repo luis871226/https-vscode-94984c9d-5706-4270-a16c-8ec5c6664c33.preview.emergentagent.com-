@@ -67,7 +67,8 @@ const Locomotives = () => {
           loco.brand?.toLowerCase().includes(term) ||
           loco.model?.toLowerCase().includes(term) ||
           loco.reference?.toLowerCase().includes(term) ||
-          loco.railway_company?.toLowerCase().includes(term)
+          loco.railway_company?.toLowerCase().includes(term) ||
+          loco.era?.toLowerCase().includes(term)
       );
     }
 

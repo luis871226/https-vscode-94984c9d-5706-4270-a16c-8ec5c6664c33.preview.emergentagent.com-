@@ -74,7 +74,8 @@ const RollingStock = () => {
           item.model?.toLowerCase().includes(term) ||
           item.reference?.toLowerCase().includes(term) ||
           item.registration_number?.toLowerCase().includes(term) ||
-          item.railway_company?.toLowerCase().includes(term)
+          item.railway_company?.toLowerCase().includes(term) ||
+          item.era?.toLowerCase().includes(term)
       );
     }
 

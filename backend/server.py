@@ -211,6 +211,9 @@ async def get_locomotives():
             loco['created_at'] = datetime.fromisoformat(loco['created_at'])
         if isinstance(loco.get('updated_at'), str):
             loco['updated_at'] = datetime.fromisoformat(loco['updated_at'])
+        # Convertir dcc_address a string si es número
+        if 'dcc_address' in loco and not isinstance(loco['dcc_address'], str):
+            loco['dcc_address'] = str(loco['dcc_address'])
     return locomotives
 
 @api_router.get("/locomotives/{locomotive_id}", response_model=Locomotive)
@@ -222,6 +225,9 @@ async def get_locomotive(locomotive_id: str):
         locomotive['created_at'] = datetime.fromisoformat(locomotive['created_at'])
     if isinstance(locomotive.get('updated_at'), str):
         locomotive['updated_at'] = datetime.fromisoformat(locomotive['updated_at'])
+    # Convertir dcc_address a string si es número
+    if 'dcc_address' in locomotive and not isinstance(locomotive['dcc_address'], str):
+        locomotive['dcc_address'] = str(locomotive['dcc_address'])
     return locomotive
 
 @api_router.post("/locomotives", response_model=Locomotive)
@@ -252,6 +258,9 @@ async def update_locomotive(locomotive_id: str, locomotive: LocomotiveCreate):
         updated['created_at'] = datetime.fromisoformat(updated['created_at'])
     if isinstance(updated.get('updated_at'), str):
         updated['updated_at'] = datetime.fromisoformat(updated['updated_at'])
+    # Convertir dcc_address a string si es número
+    if 'dcc_address' in updated and not isinstance(updated['dcc_address'], str):
+        updated['dcc_address'] = str(updated['dcc_address'])
     return updated
 
 @api_router.delete("/locomotives/{locomotive_id}")
