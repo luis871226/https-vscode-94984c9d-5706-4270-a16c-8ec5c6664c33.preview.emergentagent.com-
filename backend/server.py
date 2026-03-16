@@ -1018,12 +1018,12 @@ async def export_catalog_pdf(
         table_data = [['Marca', 'Modelo', 'Ref.', 'Tipo', 'DCC', 'Decoder', 'Precio']]
         for loco in locomotives:
             table_data.append([
-                loco.get('brand', '')[:15],
-                loco.get('model', '')[:20],
-                loco.get('reference', '')[:12],
-                loco.get('locomotive_type', '')[:10],
-                str(loco.get('dcc_address', '')),
-                f"{loco.get('decoder_brand', '')} {loco.get('decoder_model', '')}"[:15],
+                (loco.get('brand') or '')[:15],
+                (loco.get('model') or '')[:20],
+                (loco.get('reference') or '')[:12],
+                (loco.get('locomotive_type') or '')[:10],
+                str(loco.get('dcc_address') or ''),
+                f"{loco.get('decoder_brand') or ''} {loco.get('decoder_model') or ''}"[:15],
                 f"{loco.get('price', 0) or 0:.2f}€"
             ])
         
@@ -1052,12 +1052,12 @@ async def export_catalog_pdf(
         table_data = [['Marca', 'Modelo', 'Referencia', 'Matrícula', 'Tipo', 'Era', 'Precio']]
         for stock in rolling_stock:
             table_data.append([
-                stock.get('brand', '')[:15],
-                stock.get('model', '')[:20],
-                stock.get('reference', '')[:12],
-                stock.get('registration_number', '')[:12],
-                stock.get('stock_type', '')[:12],
-                stock.get('era', '')[:8],
+                (stock.get('brand') or '')[:15],
+                (stock.get('model') or '')[:20],
+                (stock.get('reference') or '')[:12],
+                (stock.get('registration_number') or '')[:12],
+                (stock.get('stock_type') or '')[:12],
+                (stock.get('era') or '')[:8],
                 f"{stock.get('price', 0) or 0:.2f}€"
             ])
         
@@ -1137,12 +1137,12 @@ async def export_locomotives_pdf(
         table_data = [['Marca', 'Modelo', 'Referencia', 'DCC', 'Tipo', 'Era', 'Precio']]
         for loco in locomotives:
             table_data.append([
-                loco.get('brand', '')[:15],
-                loco.get('model', '')[:20],
-                loco.get('reference', '')[:12],
-                str(loco.get('dcc_address', ''))[:8],
-                loco.get('locomotive_type', '')[:12],
-                loco.get('era', '')[:5],
+                (loco.get('brand') or '')[:15],
+                (loco.get('model') or '')[:20],
+                (loco.get('reference') or '')[:12],
+                str(loco.get('dcc_address') or '')[:8],
+                (loco.get('locomotive_type') or '')[:12],
+                (loco.get('era') or '')[:5],
                 f"{loco.get('price', 0) or 0:.2f}€"
             ])
         
@@ -1203,12 +1203,12 @@ async def export_rolling_stock_pdf(
         table_data = [['Marca', 'Modelo', 'Referencia', 'Matrícula', 'Tipo', 'Era', 'Precio']]
         for stock in rolling_stock:
             table_data.append([
-                stock.get('brand', '')[:15],
-                stock.get('model', '')[:18],
-                stock.get('reference', '')[:12],
-                stock.get('registration_number', '')[:12],
-                stock.get('stock_type', '')[:12],
-                stock.get('era', '')[:5],
+                (stock.get('brand') or '')[:15],
+                (stock.get('model') or '')[:18],
+                (stock.get('reference') or '')[:12],
+                (stock.get('registration_number') or '')[:12],
+                (stock.get('stock_type') or '')[:12],
+                (stock.get('era') or '')[:5],
                 f"{stock.get('price', 0) or 0:.2f}€"
             ])
         

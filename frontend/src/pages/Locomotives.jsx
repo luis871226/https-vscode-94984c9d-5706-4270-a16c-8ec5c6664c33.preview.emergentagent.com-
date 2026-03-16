@@ -88,9 +88,15 @@ const Locomotives = () => {
       let bVal = b[sortKey];
       
       // Handle numeric fields
-      if (sortKey === "price" || sortKey === "dcc_address") {
-        aVal = aVal || 0;
-        bVal = bVal || 0;
+      if (sortKey === "price") {
+        aVal = parseFloat(aVal) || 0;
+        bVal = parseFloat(bVal) || 0;
+      } else if (sortKey === "dcc_address") {
+        // DCC address puede ser número o "Analógico"
+        const aNum = parseInt(aVal);
+        const bNum = parseInt(bVal);
+        aVal = isNaN(aNum) ? 99999 : aNum; // "Analógico" va al final
+        bVal = isNaN(bNum) ? 99999 : bNum;
       } else {
         aVal = (aVal || "").toString().toLowerCase();
         bVal = (bVal || "").toString().toLowerCase();

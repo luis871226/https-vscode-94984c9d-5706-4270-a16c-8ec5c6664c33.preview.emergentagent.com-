@@ -93,8 +93,8 @@ const RollingStock = () => {
       let bVal = b[sortKey];
       
       if (sortKey === "price") {
-        aVal = aVal || 0;
-        bVal = bVal || 0;
+        aVal = parseFloat(aVal) || 0;
+        bVal = parseFloat(bVal) || 0;
       } else {
         aVal = (aVal || "").toString().toLowerCase();
         bVal = (bVal || "").toString().toLowerCase();
