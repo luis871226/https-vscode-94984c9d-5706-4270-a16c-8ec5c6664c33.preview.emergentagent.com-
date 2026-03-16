@@ -142,11 +142,19 @@ export default function CompositionDetail() {
             {locomotive ? (
               <Link 
                 to={`/locomotives/${locomotive.id}`}
-                className="flex-shrink-0 p-4 bg-red-50 border-2 border-red-200 rounded-lg hover:border-red-400 transition-colors min-w-[140px]"
+                className="flex-shrink-0 p-3 bg-red-50 border-2 border-red-200 rounded-lg hover:border-red-400 transition-colors min-w-[140px]"
               >
-                <Train className="w-8 h-8 text-red-600 mx-auto mb-2" />
+                {locomotive.photo ? (
+                  <img 
+                    src={locomotive.photo} 
+                    alt={locomotive.model} 
+                    className="w-full h-20 object-cover rounded mb-2"
+                  />
+                ) : (
+                  <Train className="w-12 h-12 text-red-600 mx-auto mb-2" />
+                )}
                 <p className="font-bold text-sm text-center">{locomotive.brand}</p>
-                <p className="text-xs text-slate-600 text-center">{locomotive.model}</p>
+                <p className="text-xs text-slate-600 text-center truncate">{locomotive.model}</p>
                 <p className="text-xs text-slate-400 text-center mt-1">DCC: {locomotive.dcc_address}</p>
               </Link>
             ) : (
@@ -161,16 +169,24 @@ export default function CompositionDetail() {
 
             {/* Wagons */}
             {wagons.map((wagon, index) => (
-              <div key={wagon.id} className="flex items-center gap-2">
+              <div key={`${wagon.id}-${index}`} className="flex items-center gap-2">
                 <Link
                   to={`/rolling-stock/${wagon.id}`}
-                  className="flex-shrink-0 p-4 bg-green-50 border-2 border-green-200 rounded-lg hover:border-green-400 transition-colors min-w-[130px]"
+                  className="flex-shrink-0 p-3 bg-green-50 border-2 border-green-200 rounded-lg hover:border-green-400 transition-colors min-w-[120px] relative"
                 >
-                  <div className="absolute -top-2 -left-2 bg-purple-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  <div className="absolute -top-2 -left-2 bg-purple-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center z-10">
                     {wagon.position}
                   </div>
-                  <TrainTrack className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                  <p className="font-bold text-sm text-center">{wagon.brand}</p>
+                  {wagon.photo ? (
+                    <img 
+                      src={wagon.photo} 
+                      alt={wagon.model} 
+                      className="w-full h-16 object-cover rounded mb-2"
+                    />
+                  ) : (
+                    <TrainTrack className="w-10 h-10 text-green-600 mx-auto mb-2" />
+                  )}
+                  <p className="font-bold text-xs text-center">{wagon.brand}</p>
                   <p className="text-xs text-slate-600 text-center truncate">{wagon.model}</p>
                 </Link>
                 {index < wagons.length - 1 && <div className="w-4 h-1 bg-slate-300 flex-shrink-0"></div>}
@@ -194,22 +210,33 @@ export default function CompositionDetail() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <p className="text-xs text-slate-500 uppercase">Marca</p>
-                <p className="font-semibold">{locomotive.brand}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 uppercase">Modelo</p>
-                <p className="font-semibold">{locomotive.model}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 uppercase">Referencia</p>
-                <p className="font-mono">{locomotive.reference}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 uppercase">Dirección DCC</p>
-                <p className="font-mono font-bold">{locomotive.dcc_address}</p>
+            <div className="flex gap-6">
+              {locomotive.photo && (
+                <div className="flex-shrink-0">
+                  <img 
+                    src={locomotive.photo} 
+                    alt={locomotive.model} 
+                    className="w-40 h-28 object-cover rounded-lg border"
+                  />
+                </div>
+              )}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Marca</p>
+                  <p className="font-semibold">{locomotive.brand}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Modelo</p>
+                  <p className="font-semibold">{locomotive.model}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Referencia</p>
+                  <p className="font-mono">{locomotive.reference}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Dirección DCC</p>
+                  <p className="font-mono font-bold">{locomotive.dcc_address}</p>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -231,6 +258,7 @@ export default function CompositionDetail() {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-2 px-2 text-xs uppercase text-slate-500">Pos.</th>
+                    <th className="text-left py-2 px-2 text-xs uppercase text-slate-500">Foto</th>
                     <th className="text-left py-2 px-2 text-xs uppercase text-slate-500">Marca</th>
                     <th className="text-left py-2 px-2 text-xs uppercase text-slate-500">Modelo</th>
                     <th className="text-left py-2 px-2 text-xs uppercase text-slate-500">Referencia</th>
@@ -238,12 +266,25 @@ export default function CompositionDetail() {
                   </tr>
                 </thead>
                 <tbody>
-                  {wagons.map((wagon) => (
-                    <tr key={wagon.id} className="border-b hover:bg-slate-50">
+                  {wagons.map((wagon, index) => (
+                    <tr key={`${wagon.id}-${index}`} className="border-b hover:bg-slate-50">
                       <td className="py-2 px-2">
                         <span className="bg-purple-100 text-purple-700 font-mono text-sm px-2 py-1 rounded">
                           #{wagon.position}
                         </span>
+                      </td>
+                      <td className="py-2 px-2">
+                        {wagon.photo ? (
+                          <img 
+                            src={wagon.photo} 
+                            alt={wagon.model} 
+                            className="w-16 h-10 object-cover rounded"
+                          />
+                        ) : (
+                          <div className="w-16 h-10 bg-slate-100 rounded flex items-center justify-center">
+                            <TrainTrack className="w-5 h-5 text-slate-400" />
+                          </div>
+                        )}
                       </td>
                       <td className="py-2 px-2 font-semibold">{wagon.brand}</td>
                       <td className="py-2 px-2">{wagon.model}</td>
