@@ -147,14 +147,14 @@ const RollingStock = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <a href={exportRollingStockPDF(sortKey, sortDirection)} target="_blank" rel="noopener noreferrer">
+          <a href={exportRollingStockPDF(sortKey, sortDirection, { search: searchTerm, type: filterType, condition: filterCondition })} target="_blank" rel="noopener noreferrer">
             <Button 
               variant="outline"
               className="font-mono uppercase tracking-widest text-xs gap-2 border-slate-300"
               data-testid="export-rolling-stock-pdf-btn"
             >
               <FileDown className="w-4 h-4" />
-              Exportar PDF
+              Exportar PDF ({filteredStock.length})
             </Button>
           </a>
           <Link to="/rolling-stock/new">

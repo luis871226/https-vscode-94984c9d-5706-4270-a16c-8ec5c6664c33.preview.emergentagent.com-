@@ -151,14 +151,14 @@ const Locomotives = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <a href={exportLocomotivesPDF(sortKey, sortDirection)} target="_blank" rel="noopener noreferrer">
+          <a href={exportLocomotivesPDF(sortKey, sortDirection, { search: searchTerm, brand: filterBrand, condition: filterCondition })} target="_blank" rel="noopener noreferrer">
             <Button 
               variant="outline"
               className="font-mono uppercase tracking-widest text-xs gap-2 border-slate-300"
               data-testid="export-locomotives-pdf-btn"
             >
               <FileDown className="w-4 h-4" />
-              Exportar PDF
+              Exportar PDF ({filteredLocomotives.length})
             </Button>
           </a>
           <Link to="/locomotives/new">

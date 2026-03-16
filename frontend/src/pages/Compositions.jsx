@@ -143,6 +143,61 @@ export default function Compositions() {
                   </div>
                 </div>
                 
+                {/* Locomotive and wagons images */}
+                <div className="flex items-center gap-1 overflow-x-auto py-2 mb-3">
+                  {/* Locomotive */}
+                  {comp.locomotive_details ? (
+                    <div className="flex-shrink-0" title={`${comp.locomotive_details.brand} ${comp.locomotive_details.model}`}>
+                      {comp.locomotive_details.photo ? (
+                        <img 
+                          src={comp.locomotive_details.photo} 
+                          alt={comp.locomotive_details.model} 
+                          className="w-14 h-10 object-cover border-2 border-red-500 rounded"
+                        />
+                      ) : (
+                        <div className="w-14 h-10 bg-red-100 border-2 border-red-500 rounded flex items-center justify-center">
+                          <Train className="w-5 h-5 text-red-500" />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="w-14 h-10 bg-slate-100 border border-dashed border-slate-300 rounded flex items-center justify-center flex-shrink-0">
+                      <Train className="w-5 h-5 text-slate-300" />
+                    </div>
+                  )}
+                  
+                  {/* Separator */}
+                  <div className="w-2 h-0.5 bg-slate-300 flex-shrink-0"></div>
+                  
+                  {/* Wagons */}
+                  {comp.wagons_details && comp.wagons_details.length > 0 ? (
+                    comp.wagons_details.map((wagon, idx) => (
+                      <div key={idx} className="flex items-center gap-1 flex-shrink-0">
+                        {wagon.photo ? (
+                          <img 
+                            src={wagon.photo} 
+                            alt={wagon.model} 
+                            className="w-12 h-8 object-cover border border-green-500 rounded"
+                            title={`${wagon.brand} ${wagon.model}`}
+                          />
+                        ) : (
+                          <div 
+                            className="w-12 h-8 bg-green-50 border border-green-500 rounded flex items-center justify-center"
+                            title={`${wagon.brand} ${wagon.model}`}
+                          >
+                            <TrainTrack className="w-4 h-4 text-green-500" />
+                          </div>
+                        )}
+                        {idx < comp.wagons_details.length - 1 && (
+                          <div className="w-1 h-0.5 bg-slate-300"></div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-xs text-slate-400 italic">Sin vagones</div>
+                  )}
+                </div>
+                
                 <div className="flex items-center gap-4 text-sm text-slate-600 mb-4">
                   <div className="flex items-center gap-1">
                     <Train className="w-4 h-4" />

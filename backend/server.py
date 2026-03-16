@@ -1111,9 +1111,12 @@ async def export_catalog_pdf(
 @api_router.get("/export/locomotives/pdf")
 async def export_locomotives_pdf(
     sort_field: str = "brand",
-    sort_order: str = "asc"
+    sort_order: str = "asc",
+    search: Optional[str] = None,
+    brand: Optional[str] = None,
+    condition: Optional[str] = None
 ):
-    """Export only locomotives to PDF with custom sorting"""
+    """Export only locomotives to PDF with custom sorting and filtering"""
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=1*cm, leftMargin=1*cm, topMargin=1*cm, bottomMargin=1*cm)
     elements = []
@@ -1125,12 +1128,34 @@ async def export_locomotives_pdf(
     # Title
     elements.append(Paragraph("Catálogo de Locomotoras", title_style))
     elements.append(Paragraph(f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
+    
+    # Build filter query
+    query = {}
+    filter_info = []
+    if search:
+        query["$or"] = [
+            {"brand": {"$regex": search, "$options": "i"}},
+            {"model": {"$regex": search, "$options": "i"}},
+            {"reference": {"$regex": search, "$options": "i"}},
+            {"railway_company": {"$regex": search, "$options": "i"}},
+            {"era": {"$regex": search, "$options": "i"}}
+        ]
+        filter_info.append(f"Búsqueda: {search}")
+    if brand and brand != 'all':
+        query["brand"] = brand
+        filter_info.append(f"Marca: {brand}")
+    if condition and condition != 'all':
+        query["condition"] = condition
+        filter_info.append(f"Estado: {condition}")
+    
+    if filter_info:
+        elements.append(Paragraph(f"Filtros: {', '.join(filter_info)}", styles['Normal']))
     elements.append(Paragraph(f"Ordenado por: {sort_field} ({sort_order})", styles['Normal']))
     elements.append(Spacer(1, 20))
     
-    # Locomotives with sorting
+    # Locomotives with sorting and filtering
     sort_direction = 1 if sort_order == "asc" else -1
-    locomotives = await db.locomotives.find({}, {"_id": 0}).sort(sort_field, sort_direction).to_list(1000)
+    locomotives = await db.locomotives.find(query, {"_id": 0}).sort(sort_field, sort_direction).to_list(1000)
     
     if locomotives:
         elements.append(Paragraph(f"Locomotoras ({len(locomotives)})", subtitle_style))
@@ -1177,9 +1202,12 @@ async def export_locomotives_pdf(
 @api_router.get("/export/rolling-stock/pdf")
 async def export_rolling_stock_pdf(
     sort_field: str = "brand",
-    sort_order: str = "asc"
+    sort_order: str = "asc",
+    search: Optional[str] = None,
+    stock_type: Optional[str] = None,
+    condition: Optional[str] = None
 ):
-    """Export only rolling stock to PDF with custom sorting"""
+    """Export only rolling stock to PDF with custom sorting and filtering"""
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=1*cm, leftMargin=1*cm, topMargin=1*cm, bottomMargin=1*cm)
     elements = []
@@ -1191,12 +1219,35 @@ async def export_rolling_stock_pdf(
     # Title
     elements.append(Paragraph("Catálogo de Vagones y Coches", title_style))
     elements.append(Paragraph(f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
+    
+    # Build filter query
+    query = {}
+    filter_info = []
+    if search:
+        query["$or"] = [
+            {"brand": {"$regex": search, "$options": "i"}},
+            {"model": {"$regex": search, "$options": "i"}},
+            {"reference": {"$regex": search, "$options": "i"}},
+            {"registration_number": {"$regex": search, "$options": "i"}},
+            {"railway_company": {"$regex": search, "$options": "i"}},
+            {"era": {"$regex": search, "$options": "i"}}
+        ]
+        filter_info.append(f"Búsqueda: {search}")
+    if stock_type and stock_type != 'all':
+        query["stock_type"] = stock_type
+        filter_info.append(f"Tipo: {stock_type}")
+    if condition and condition != 'all':
+        query["condition"] = condition
+        filter_info.append(f"Estado: {condition}")
+    
+    if filter_info:
+        elements.append(Paragraph(f"Filtros: {', '.join(filter_info)}", styles['Normal']))
     elements.append(Paragraph(f"Ordenado por: {sort_field} ({sort_order})", styles['Normal']))
     elements.append(Spacer(1, 20))
     
-    # Rolling stock with sorting
+    # Rolling stock with sorting and filtering
     sort_direction = 1 if sort_order == "asc" else -1
-    rolling_stock = await db.rolling_stock.find({}, {"_id": 0}).sort(sort_field, sort_direction).to_list(1000)
+    rolling_stock = await db.rolling_stock.find(query, {"_id": 0}).sort(sort_field, sort_direction).to_list(1000)
     
     if rolling_stock:
         elements.append(Paragraph(f"Vagones y Coches ({len(rolling_stock)})", subtitle_style))
@@ -1488,15 +1539,43 @@ async def export_rolling_stock_pdf(stock_id: str):
 
 # ============== COMPOSITION ENDPOINTS ==============
 
-@api_router.get("/compositions", response_model=List[Composition])
+@api_router.get("/compositions")
 async def get_compositions():
     compositions = await db.compositions.find({}, {"_id": 0}).to_list(1000)
+    
+    result = []
     for comp in compositions:
         if isinstance(comp.get('created_at'), str):
             comp['created_at'] = datetime.fromisoformat(comp['created_at'])
         if isinstance(comp.get('updated_at'), str):
             comp['updated_at'] = datetime.fromisoformat(comp['updated_at'])
-    return compositions
+        
+        # Fetch locomotive details if exists (with photo)
+        locomotive = None
+        if comp.get('locomotive_id'):
+            locomotive = await db.locomotives.find_one(
+                {"id": comp['locomotive_id']}, 
+                {"_id": 0, "id": 1, "brand": 1, "model": 1, "photo": 1}
+            )
+        
+        # Fetch wagon details in order (with photos)
+        wagons_details = []
+        for wagon_ref in sorted(comp.get('wagons', []), key=lambda x: x.get('position', 0)):
+            wagon = await db.rolling_stock.find_one(
+                {"id": wagon_ref['wagon_id']}, 
+                {"_id": 0, "id": 1, "brand": 1, "model": 1, "photo": 1}
+            )
+            if wagon:
+                wagon['position'] = wagon_ref['position']
+                wagons_details.append(wagon)
+        
+        result.append({
+            **comp,
+            "locomotive_details": locomotive,
+            "wagons_details": wagons_details
+        })
+    
+    return result
 
 @api_router.get("/compositions/{composition_id}")
 async def get_composition(composition_id: str):

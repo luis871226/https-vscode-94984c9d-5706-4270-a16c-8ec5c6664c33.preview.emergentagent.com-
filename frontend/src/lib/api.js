@@ -63,10 +63,20 @@ export const moveWishlistToCollection = (id, purchaseDate, price) =>
 // PDF Export
 export const exportCatalogPDF = (locoSortField = 'brand', locoSortOrder = 'asc', stockSortField = 'brand', stockSortOrder = 'asc') => 
   `${API}/export/catalog/pdf?loco_sort_field=${locoSortField}&loco_sort_order=${locoSortOrder}&stock_sort_field=${stockSortField}&stock_sort_order=${stockSortOrder}`;
-export const exportLocomotivesPDF = (sortField = 'brand', sortOrder = 'asc') => 
-  `${API}/export/locomotives/pdf?sort_field=${sortField}&sort_order=${sortOrder}`;
-export const exportRollingStockPDF = (sortField = 'brand', sortOrder = 'asc') => 
-  `${API}/export/rolling-stock/pdf?sort_field=${sortField}&sort_order=${sortOrder}`;
+export const exportLocomotivesPDF = (sortField = 'brand', sortOrder = 'asc', filters = {}) => {
+  let url = `${API}/export/locomotives/pdf?sort_field=${sortField}&sort_order=${sortOrder}`;
+  if (filters.search) url += `&search=${encodeURIComponent(filters.search)}`;
+  if (filters.brand && filters.brand !== 'all') url += `&brand=${encodeURIComponent(filters.brand)}`;
+  if (filters.condition && filters.condition !== 'all') url += `&condition=${encodeURIComponent(filters.condition)}`;
+  return url;
+};
+export const exportRollingStockPDF = (sortField = 'brand', sortOrder = 'asc', filters = {}) => {
+  let url = `${API}/export/rolling-stock/pdf?sort_field=${sortField}&sort_order=${sortOrder}`;
+  if (filters.search) url += `&search=${encodeURIComponent(filters.search)}`;
+  if (filters.type && filters.type !== 'all') url += `&stock_type=${encodeURIComponent(filters.type)}`;
+  if (filters.condition && filters.condition !== 'all') url += `&condition=${encodeURIComponent(filters.condition)}`;
+  return url;
+};
 export const exportCompositionsPDF = () => `${API}/export/compositions/pdf`;
 export const exportLocomotivePDF = (id) => `${API}/export/locomotive/${id}/pdf`;
 export const exportRollingStockItemPDF = (id) => `${API}/export/rolling-stock/${id}/pdf`;
