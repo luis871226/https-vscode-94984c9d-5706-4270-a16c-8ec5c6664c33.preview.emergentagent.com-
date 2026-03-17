@@ -31,6 +31,7 @@ const Locomotives = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterBrand, setFilterBrand] = useState("all");
   const [filterCondition, setFilterCondition] = useState("all");
+  const [filterDccType, setFilterDccType] = useState("all");
   const [deleteId, setDeleteId] = useState(null);
   const [sortKey, setSortKey] = useState("brand");
   const [sortDirection, setSortDirection] = useState("asc");
@@ -82,6 +83,19 @@ const Locomotives = () => {
       filtered = filtered.filter((loco) => loco.condition === filterCondition);
     }
 
+    // DCC Type filter (digital vs analog)
+    if (filterDccType === "digital") {
+      filtered = filtered.filter((loco) => {
+        const dcc = (loco.dcc_address || "").toString().toLowerCase();
+        return !dcc.startsWith("anal");
+      });
+    } else if (filterDccType === "analogico") {
+      filtered = filtered.filter((loco) => {
+        const dcc = (loco.dcc_address || "").toString().toLowerCase();
+        return dcc.startsWith("anal");
+      });
+    }
+
     // Sort
     filtered.sort((a, b) => {
       let aVal = a[sortKey];
@@ -108,7 +122,7 @@ const Locomotives = () => {
     });
 
     return filtered;
-  }, [locomotives, searchTerm, filterBrand, filterCondition, sortKey, sortDirection]);
+  }, [locomotives, searchTerm, filterBrand, filterCondition, filterDccType, sortKey, sortDirection]);
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -151,7 +165,7 @@ const Locomotives = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <a href={exportLocomotivesPDF(sortKey, sortDirection, { search: searchTerm, brand: filterBrand, condition: filterCondition })} target="_blank" rel="noopener noreferrer">
+          <a href={exportLocomotivesPDF(sortKey, sortDirection, { search: searchTerm, brand: filterBrand, condition: filterCondition, dccType: filterDccType })} target="_blank" rel="noopener noreferrer">
             <Button 
               variant="outline"
               className="font-mono uppercase tracking-widest text-xs gap-2 border-slate-300"
@@ -217,6 +231,19 @@ const Locomotives = () => {
               <SelectItem value="nuevo">Nuevo</SelectItem>
               <SelectItem value="usado">Usado</SelectItem>
               <SelectItem value="restaurado">Restaurado</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterDccType} onValueChange={setFilterDccType}>
+            <SelectTrigger 
+              className="w-[140px] font-mono text-xs uppercase rounded-none border-slate-300"
+              data-testid="filter-dcc-type"
+            >
+              <SelectValue placeholder="Tipo DCC" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="digital">Digital</SelectItem>
+              <SelectItem value="analogico">Analógico</SelectItem>
             </SelectContent>
           </Select>
         </div>

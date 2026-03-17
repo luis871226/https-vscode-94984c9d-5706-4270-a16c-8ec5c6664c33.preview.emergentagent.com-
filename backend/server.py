@@ -1114,7 +1114,8 @@ async def export_locomotives_pdf(
     sort_order: str = "asc",
     search: Optional[str] = None,
     brand: Optional[str] = None,
-    condition: Optional[str] = None
+    condition: Optional[str] = None,
+    dcc_type: Optional[str] = None  # "digital", "analogico", or None for all
 ):
     """Export only locomotives to PDF with custom sorting and filtering"""
     buffer = BytesIO()
@@ -1147,6 +1148,14 @@ async def export_locomotives_pdf(
     if condition and condition != 'all':
         query["condition"] = condition
         filter_info.append(f"Estado: {condition}")
+    if dcc_type == "digital":
+        # Digital: dcc_address is a number (not "Analógico" or "analogico")
+        query["dcc_address"] = {"$not": {"$regex": "^[Aa]nal", "$options": "i"}}
+        filter_info.append("Tipo: Digital")
+    elif dcc_type == "analogico":
+        # Analog: dcc_address contains "Analógico" or "analogico"
+        query["dcc_address"] = {"$regex": "^[Aa]nal", "$options": "i"}
+        filter_info.append("Tipo: Analógico")
     
     if filter_info:
         elements.append(Paragraph(f"Filtros: {', '.join(filter_info)}", styles['Normal']))

@@ -68,6 +68,7 @@ export const exportLocomotivesPDF = (sortField = 'brand', sortOrder = 'asc', fil
   if (filters.search) url += `&search=${encodeURIComponent(filters.search)}`;
   if (filters.brand && filters.brand !== 'all') url += `&brand=${encodeURIComponent(filters.brand)}`;
   if (filters.condition && filters.condition !== 'all') url += `&condition=${encodeURIComponent(filters.condition)}`;
+  if (filters.dccType && filters.dccType !== 'all') url += `&dcc_type=${encodeURIComponent(filters.dccType)}`;
   return url;
 };
 export const exportRollingStockPDF = (sortField = 'brand', sortOrder = 'asc', filters = {}) => {
