@@ -799,7 +799,7 @@ def parse_jmri_xml(xml_content: str) -> dict:
             'paint_scheme': '',
             'registration_number': road_number,
             'prototype_type': project_name or project_type,
-            'dcc_address': int(dcc_address) if dcc_address.isdigit() else 3,
+            'dcc_address': str(dcc_address) if dcc_address else "3",  # Convert to string
             'decoder_brand': decoder_brand,
             'decoder_model': decoder_model,
             'sound_project': sound_project,
@@ -1713,7 +1713,7 @@ async def import_locomotives_csv(csv_content: str = Body(..., media_type="text/p
                     'model': row.get('model', '').strip(),
                     'reference': row.get('reference', '').strip(),
                     'locomotive_type': row.get('locomotive_type', 'diesel').strip() or 'diesel',
-                    'dcc_address': int(row.get('dcc_address', '3').strip() or '3'),
+                    'dcc_address': str(row.get('dcc_address', '3').strip() or '3'),  # Keep as string
                     'decoder_brand': row.get('decoder_brand', '').strip() or None,
                     'decoder_model': row.get('decoder_model', '').strip() or None,
                     'condition': row.get('condition', 'nuevo').strip() or 'nuevo',
