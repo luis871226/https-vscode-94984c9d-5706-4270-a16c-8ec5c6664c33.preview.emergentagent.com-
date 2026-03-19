@@ -1,0 +1,121 @@
+================================================================================
+                    escalaN.es Coleccion
+          Sistema de Gestion de Trenes a Escala N
+              App gratuita - No comercial
+================================================================================
+
+REQUISITOS PREVIOS
+==================
+
+Antes de instalar la aplicacion, debes tener instalados estos programas:
+
+1. PYTHON 3.11
+   - Descargar de: https://www.python.org/downloads/release/python-3119/
+   - IMPORTANTE: Al instalar, marcar la casilla "Add Python to PATH"
+   - Verificar instalacion: abrir CMD y escribir "python --version"
+
+2. NODE.JS 20 LTS
+   - Descargar de: https://nodejs.org/
+   - Elegir la version LTS (boton verde de la izquierda)
+   - Verificar instalacion: abrir CMD y escribir "node --version"
+
+3. MONGODB COMMUNITY 8.x
+   - Descargar de: https://www.mongodb.com/try/download/community
+   - Seleccionar: Version 8.x, Windows, MSI
+   - Al instalar, marcar "Install MongoDB as a Service" (recomendado)
+   - Verificar instalacion: buscar carpeta "C:\Program Files\MongoDB"
+
+
+INSTALACION DE LA APLICACION
+============================
+
+OPCION A: INSTALACION AUTOMATICA (Recomendada)
+----------------------------------------------
+
+1. Copiar la carpeta "escalan" completa a C:\escalan
+
+2. Hacer doble clic en el archivo: instalar-escalan.bat
+
+3. Esperar a que termine la instalacion (puede tardar 5-10 minutos)
+
+4. Una vez finalizado, ejecutar: iniciar-escalan.bat
+
+
+OPCION B: INSTALACION MANUAL
+----------------------------
+
+1. Copiar la carpeta "escalan" completa a C:\escalan
+
+2. Abrir CMD como administrador y ejecutar:
+
+   mkdir C:\data\db
+
+3. Crear archivos de configuracion:
+
+   echo REACT_APP_BACKEND_URL=http://localhost:8001 > C:\escalan\frontend\.env
+   echo MONGO_URL=mongodb://localhost:27017 > C:\escalan\backend\.env
+   echo DB_NAME=escalan_coleccion >> C:\escalan\backend\.env
+
+4. Instalar dependencias del Backend:
+
+   cd C:\escalan\backend
+   python -m venv venv
+   venv\Scripts\activate
+   pip install -r requirements.txt
+
+5. Instalar dependencias del Frontend:
+
+   cd C:\escalan\frontend
+   npm install --legacy-peer-deps
+   npm install ajv@8 --legacy-peer-deps
+
+
+USO DE LA APLICACION
+====================
+
+INICIAR:
+- Hacer doble clic en "iniciar-escalan.bat"
+- Se abrira automaticamente en el navegador: http://localhost:3000
+
+CERRAR:
+- Hacer doble clic en "cerrar-escalan.bat"
+- O cerrar las ventanas de CMD manualmente
+
+
+FUNCIONALIDADES
+===============
+
+- Gestion de locomotoras (digitales y analogicas)
+- Gestion de vagones y coches con matriculas
+- Composiciones de trenes con imagenes
+- Importacion de archivos JMRI (XML) y CSV
+- Exportacion a PDF con filtros
+- Sistema de Backup y Restore
+- Busqueda por epoca, marca, modelo, etc.
+
+
+SOLUCION DE PROBLEMAS
+=====================
+
+1. "La aplicacion no guarda datos"
+   - Verificar que MongoDB esta corriendo
+   - Ejecutar en CMD: tasklist | findstr mongod
+   - Si no aparece, iniciar MongoDB manualmente
+
+2. "Error al iniciar el Frontend"
+   - Ejecutar: npm install ajv@8 --legacy-peer-deps
+
+3. "Python no se reconoce como comando"
+   - Reinstalar Python marcando "Add Python to PATH"
+
+4. "MongoDB no inicia"
+   - Crear carpeta: mkdir C:\data\db
+   - Verificar que no hay otra instancia corriendo
+
+
+SOPORTE
+=======
+
+Esta aplicacion fue creada con Emergent (https://emergentagent.com)
+
+================================================================================
